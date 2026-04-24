@@ -1,0 +1,257 @@
+# TONG HOP CHUC NANG TOAN BO MODULE - BADMINTON SHOP
+
+Tai lieu nay liet ke tat ca chuc nang da duoc xay dung trong project theo tung module.
+
+## 1) MODULE AUTH
+
+- Dang ky tai khoan (`/api/auth/register`)
+- Dang nhap + cap access/refresh token (`/api/auth/login`)
+- Lam moi token (`/api/auth/refresh`)
+- Dang xuat (vo hieu hoa refresh token) (`/api/auth/logout`)
+- Xac thuc email qua token (`/api/auth/verify-email`)
+- Gui lai email xac thuc (`/api/auth/resend-verification`)
+- Quen mat khau (`/api/auth/forgot-password`)
+- Dat lai mat khau (`/api/auth/reset-password`)
+- Doi mat khau khi da dang nhap (`/api/auth/change-password`)
+- Lay thong tin nguoi dung hien tai (`/api/auth/me`)
+- Cap nhat ho so ca nhan (`/api/auth/profile`)
+- Cap nhat avatar (`/api/auth/profile/avatar`)
+- Xoa mem tai khoan (set INACTIVE) (`/api/auth/account`)
+- Social login redirect endpoint (Google/Facebook OAuth2)
+- Forward trang reset password HTML (`/auth/reset-password`)
+
+## 2) MODULE ADDRESS (THUOC AUTH)
+
+- CRUD dia chi giao hang cua user:
+- Tao dia chi (`POST /api/addresses`)
+- Cap nhat dia chi (`PUT /api/addresses/{id}`)
+- Xoa dia chi (`DELETE /api/addresses/{id}`)
+- Lay danh sach dia chi (`GET /api/addresses`)
+- Lay chi tiet dia chi (`GET /api/addresses/{id}`)
+- Dat dia chi mac dinh (`PATCH /api/addresses/{id}/default`)
+
+## 3) MODULE PRODUCT
+
+### 3.1 Public Product
+- Lay danh sach san pham co filter/sort/paging (`GET /api/products`)
+- Kiem tra slug ton tai (`GET /api/products/search/existsBySlug`)
+- Lay chi tiet san pham theo id (`GET /api/products/{id}`)
+- Lay danh sach featured products (`GET /api/products/featured`)
+- Lay danh sach newest products (`GET /api/products/new`)
+
+### 3.2 Product Data trong response
+- Product detail co:
+- Danh sach anh (`productImages`)
+- Danh sach variants (`productVariants`)
+- Danh sach review moi nhat (`latestReviews`)
+- Product list co them truong `rate` (diem trung binh review)
+
+### 3.3 Admin Product
+- Tao san pham (`POST /api/products`)
+- Cap nhat san pham (`PUT /api/products/{id}`)
+- Upload thumbnail (`POST /api/products/{id}/thumbnail`)
+- Bat/tat trang thai hoat dong (`PATCH /api/products/{id}/status`)
+- Xoa san pham (`DELETE /api/products/{id}`)
+
+### 3.4 Product Variant
+- Lay danh sach variant (`GET /api/products/{productId}/variants`)
+- Tao variant (`POST /api/products/{productId}/variants`)
+- Cap nhat variant (`PUT /api/products/{productId}/variants/{variantId}`)
+- Xoa variant (`DELETE /api/products/{productId}/variants/{variantId}`)
+
+### 3.5 Product Image
+- Lay danh sach anh (`GET /api/products/{productId}/images`)
+- Upload anh theo mau (`POST /api/products/{productId}/images` - multipart)
+- Cap nhat metadata anh (`PUT /api/products/{productId}/images/{imageId}`)
+- Xoa anh (`DELETE /api/products/{productId}/images/{imageId}`)
+
+## 4) MODULE CATEGORY
+
+- Lay cay category public (`GET /api/categories`)
+- Lay category theo slug (`GET /api/categories/{slug}`)
+- Tao category (ADMIN)
+- Cap nhat category (ADMIN)
+- Xoa category (ADMIN)
+
+## 5) MODULE BRAND
+
+- Lay danh sach brand public (`GET /api/brands`)
+- Lay brand theo slug (`GET /api/brands/{slug}`)
+- Tao brand (ADMIN)
+- Cap nhat brand (ADMIN)
+- Upload logo brand (ADMIN)
+- Xoa brand (ADMIN)
+
+## 6) MODULE SEARCH (ELASTICSEARCH + SEMANTIC/IMAGE SEARCH)
+
+- Search san pham full-text + filter + sort + paging (`GET /api/search/products`)
+- Ho tro semantic search (hybrid voi vector)
+- Search theo hinh anh (`POST /api/search/products/by-image`)
+- Goi y san pham tuong tu theo product id (`GET /api/search/products/similar`)
+- Goi y tu khoa (`GET /api/search/products/suggestions`)
+- Lay trending searches (`GET /api/search/products/trending`)
+- Reindex toan bo index san pham (ADMIN) (`POST /api/search/products/reindex`)
+- Dong bo index khi product thay doi (upsert/delete)
+- Luu log truy van tim kiem de phuc vu trending
+
+## 7) MODULE CART (ORDER SUB-MODULE)
+
+- Lay gio hang cua user (`GET /api/cart`)
+- Them item vao gio (`POST /api/cart/items`)
+- Cap nhat so luong item (`PUT /api/cart/items/{variantId}`)
+- Xoa item khoi gio (`DELETE /api/cart/items/{variantId}`)
+- Xoa toan bo gio (`DELETE /api/cart`)
+- Co co che sync cart qua messaging
+
+## 8) MODULE ORDER
+
+### 8.1 Checkout + Dat hang
+- Lay checkout context (dia chi + dia chi mac dinh) (`GET /api/orders/checkout-context`)
+- Preview don hang (`POST /api/orders/preview`) voi phi ship realtime tu GHN
+- Dat hang (`POST /api/orders`)
+- Lay lich su don cua user (`GET /api/orders/my`)
+- Khi don chuyen CONFIRMED (thanh toan thanh cong), tu dong tao van don GHN va luu `shippingCode`
+- Admin co endpoint xac nhan don COD (`POST /api/orders/admin/{orderCode}/confirm-cod`) de trigger tao van don GHN
+
+### 8.2 Thanh toan VNPAY
+- Return endpoint cho frontend (`GET /api/orders/vnpay-return`)
+- IPN endpoint backend callback (`GET /api/orders/vnpay-ipn`)
+- Verify signature + xu ly trang thai thanh toan
+- Contract IPN giu dang raw map de tuong thich VNPAY
+
+### 8.3 Huy don + Het han thanh toan
+- Khach tu huy don (`POST /api/orders/{orderCode}/cancel`)
+- Auto-cancel don VNPAY qua han thanh toan (scheduler)
+- Phat su kien order cancelled de rollback inventory
+- Gui email thong bao huy don
+
+### 8.4 Return/Refund workflow
+- Tao yeu cau tra hang (`POST /api/orders/{orderCode}/returns`)
+- Admin duyet yeu cau tra (`POST /api/orders/admin/returns/{id}/approve`)
+- Admin tu choi yeu cau tra (`POST /api/orders/admin/returns/{id}/reject`)
+- Admin/kho nhan hang tra (`POST /api/orders/admin/returns/{id}/receive`)
+- Admin danh dau da hoan tien (`POST /api/orders/admin/returns/{id}/refund`)
+
+### 8.5 Order state machine mo rong
+- Trang thai xu ly don hang + thanh toan + tra hang/hoan tien da duoc mo rong
+
+## 9) MODULE PROMOTION
+
+- Tao voucher/khuyen mai (ADMIN)
+- Cap nhat voucher (ADMIN)
+- Bat/tat voucher (ADMIN)
+- Lay danh sach voucher co paging (ADMIN)
+- Lay voucher theo code (public)
+- Validate voucher cho checkout (`POST /api/promotions/validate`)
+- Ap dung voucher vao pricing khi preview/purchase order
+- Publish su kien su dung voucher async qua RabbitMQ
+- Consumer cap nhat usage count + idempotency
+- Cache voucher theo code (Redis)
+
+## 10) MODULE REVIEW
+
+- Tao review cho order item da giao (`POST /api/reviews`)
+- Cap nhat review cua chinh user (`PUT /api/reviews/{id}`)
+- Xoa review cua chinh user (`DELETE /api/reviews/{id}`)
+- Lay chi tiet review (`GET /api/reviews/{id}`)
+- Lay danh sach review theo san pham co paging (`GET /api/reviews/products/{productId}`)
+- Lay tong hop review (averageRating + totalReviews) (`GET /api/reviews/products/{productId}/summary`)
+- Lay review cua toi (`GET /api/reviews/my`)
+- Rule nghiep vu:
+- Chi owner order item moi duoc review
+- Order phai o trang thai DELIVERED
+- Moi order item chi review 1 lan
+
+## 11) MODULE INVENTORY
+
+### 11.1 System APIs (internal)
+- Kiem tra ton kha dung (`POST /api/inventory/system/check-availability`)
+- Reserve ton kho (`POST /api/inventory/system/reserve`)
+- Commit ton kho (`POST /api/inventory/system/commit`)
+- Rollback ton kho (`POST /api/inventory/system/rollback`)
+
+### 11.2 Admin APIs
+- Nhap kho (`POST /api/inventory/admin/stock-in`)
+- Xuat kho (`POST /api/inventory/admin/stock-out`)
+- Dieu chinh sau kiem ke (`POST /api/inventory/admin/stocktake-adjustment`)
+- Xem so cai ton kho/ledger (`GET /api/inventory/admin/ledger/{variantId}`)
+- Lay canh bao ton thap (`GET /api/inventory/admin/low-stock`)
+
+### 11.3 Inventory model
+- Quan ly theo `available_quantity` va `reserved_quantity`
+- Ghi nhat ky giao dich ton kho (inventory transactions)
+- Dong bo stock cua variant theo available quantity
+- Co xu ly tuong thich schema cu (`stock_quantity`) trong entity
+
+## 12) MODULE MESSAGING (RABBITMQ DTO + CONSUMERS)
+
+### 12.0 Chat realtime (WebSocket + STOMP + MongoDB)
+- Tao/Lay phong chat cua customer (`GET /api/chat/rooms/me`) theo rule 1 customer = 1 room
+- Gui/nhan tin nhan realtime 2 chieu Customer <-> Admin (STOMP)
+- Luu lich su chat vao MongoDB qua RabbitMQ persist event pipeline
+- Lay lich su tin nhan theo phong co paging (`GET /api/chat/rooms/{roomId}/messages?page=0&size=20`)
+- Admin inbox: danh sach tat ca room, sap xep theo room vua nhan tin gan nhat (`GET /api/chat/admin/inbox`)
+- Upload file/anh dinh kem qua HTTP (`POST /api/chat/upload`) roi gui URL qua websocket
+- Read receipt (Da xem): danh dau da doc theo room (`POST /api/chat/rooms/{roomId}/read` + STOMP read event)
+- Unread count/cham do:
+- Lay unread count qua REST (`GET /api/chat/unread-count`)
+- Realtime unread qua STOMP channel cho customer/admin
+- STOMP channels da san sang:
+- Send: `/app/chat.send`, `/app/chat.read`
+- Subscribe room: `/topic/chat.room.{roomId}`
+- Subscribe read receipt: `/topic/chat.room.{roomId}.read`
+- Admin inbox realtime: `/topic/chat.admin.inbox`
+- Admin unread realtime: `/topic/chat.admin.unread`
+- Customer unread realtime: `/user/queue/chat.unread`
+
+### 12.1 Message contracts
+- EmailMessage
+- AvatarUpdateMessage
+- CartSyncMessage
+- PromotionUsageMessage
+- InventoryCommandMessage
+- OrderCancelledEvent
+- RefundRequiredMessage
+- ShippingStatusChangedMessage
+- ChatMessagePersistEvent
+
+### 12.2 Consumers
+- Email consumer
+- Avatar update consumer
+- Cart sync consumer
+- Promotion usage consumer
+- Inventory command consumer
+- Order cancelled consumer (rollback inventory)
+- Refund required consumer (ghi nhan luong hoan tien)
+- Shipping status consumer (cap nhat trang thai order theo webhook GHN)
+- Chat message persist consumer (luu MongoDB + broadcast realtime)
+
+## 15) MODULE SHIPPING (GHN)
+
+- Tich hop GHN staging API qua WebClient
+- ShippingProvider + GHNShippingService cho cac ham:
+	- calculateShippingFee
+	- createShippingOrder
+	- getShippingDetail
+	- getProvinces / getDistricts / getWards
+- Mapping dia chi user (province/district/ward theo ten) sang GHN ID/Code
+- Co webhook endpoint (`POST /api/shipping/webhook/ghn`) va publish event RabbitMQ de Order consumer cap nhat trang thai don
+- Co API danh muc dia chi GHN va tra cuu chi tiet van don
+
+## 13) MODULE PAYMENT
+
+- Hien tai dang o trang thai scaffold (co package/module) nhung chua implement endpoint/service cu the (`PaymentController`, `PaymentService` dang rong).
+
+## 14) CAC CHUC NANG CROSS-CUTTING
+
+- Chuan hoa response API theo wrapper thong nhat: `message`, `status`, `statusCode`, `data`
+- Global exception handler theo format thong nhat
+- JWT + role-based authorization
+- Redis cache cho mot so nghiep vu (search/promotion/...)
+- MongoDB cho chat history
+- RabbitMQ event-driven cho cac luong bat dong bo
+- WebSocket + STOMP cho realtime chat
+- Scheduler auto-cancel VNPAY qua han
+- Ho tro upload file (avatar, product thumbnail, product images)
+- Tai lieu API theo tung module trong thu muc `ApisDocument`
+

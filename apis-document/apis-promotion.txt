@@ -1,0 +1,235 @@
+# Promotion Module API Documentation
+
+This document describes all Promotion endpoints using the standardized response wrapper.
+
+## Standard Response Wrapper
+
+### Success (Object)
+```json
+{
+  "message": "Request processed successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {}
+}
+```
+
+### Error
+```json
+{
+  "message": "Error description.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+## Endpoints
+
+### 1. Create Promotion
+- URL: `/api/promotions`
+- Method: `POST`
+- Authentication: Required (ADMIN)
+- Description: Creates a new promotion code.
+- Request Body:
+```json
+{
+  "code": "SAVE20",
+  "discountType": "PERCENTAGE",
+  "discountValue": 20,
+  "minOrderValue": 300000,
+  "maxDiscountAmount": 100000,
+  "maxUsage": 500,
+  "startDate": "2026-03-20T00:00:00",
+  "expiryDate": "2026-04-30T23:59:59",
+  "isActive": true
+}
+```
+- Success Response (200 OK):
+```json
+{
+  "message": "Promotion created successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "code": "SAVE20",
+    "discountType": "PERCENTAGE",
+    "discountValue": 20.0,
+    "minOrderValue": 300000.0,
+    "maxDiscountAmount": 100000.0,
+    "maxUsage": 500,
+    "currentUsage": 0,
+    "startDate": "2026-03-20T00:00:00",
+    "expiryDate": "2026-04-30T23:59:59",
+    "isActive": true
+  }
+}
+```
+
+### 2. Update Promotion
+- URL: `/api/promotions/{id}`
+- Method: `PUT`
+- Authentication: Required (ADMIN)
+- Description: Updates promotion information.
+- Request Body: Same as Create Promotion.
+- Success Response (200 OK):
+```json
+{
+  "message": "Promotion updated successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "code": "SAVE25",
+    "discountType": "PERCENTAGE",
+    "discountValue": 25.0,
+    "isActive": true
+  }
+}
+```
+
+### 3. Set Promotion Active Status
+- URL: `/api/promotions/{id}/active?active=true`
+- Method: `PATCH`
+- Authentication: Required (ADMIN)
+- Description: Activates or deactivates a promotion.
+- Success Response (200 OK):
+```json
+{
+  "message": "Promotion status updated successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "code": "SAVE20",
+    "isActive": false
+  }
+}
+```
+
+### 4. Get Promotion List
+- URL: `/api/promotions?page=0&size=10&activeOnly=false`
+- Method: `GET`
+- Authentication: Required (ADMIN)
+- Description: Returns paginated list of promotions.
+- Success Response (200 OK):
+```json
+{
+  "message": "Promotions fetched successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "code": "SAVE20",
+        "discountType": "PERCENTAGE",
+        "discountValue": 20.0,
+        "isActive": true
+      }
+    ],
+    "pageable": {},
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true
+  }
+}
+```
+
+### 5. Get Promotion By Code
+- URL: `/api/promotions/{code}`
+- Method: `GET`
+- Authentication: Public
+- Description: Gets promotion details by voucher code.
+- Success Response (200 OK):
+```json
+{
+  "message": "Promotion fetched successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "code": "SAVE20",
+    "discountType": "PERCENTAGE",
+    "discountValue": 20.0,
+    "minOrderValue": 300000.0,
+    "maxDiscountAmount": 100000.0,
+    "maxUsage": 500,
+    "currentUsage": 15,
+    "startDate": "2026-03-20T00:00:00",
+    "expiryDate": "2026-04-30T23:59:59",
+    "isActive": true
+  }
+}
+```
+
+### 6. Validate Promotion For Checkout
+- URL: `/api/promotions/validate`
+- Method: `POST`
+- Authentication: Public
+- Description: Validates voucher and returns discounted totals for checkout preview.
+- Request Body:
+```json
+{
+  "voucherCode": "SAVE20",
+  "itemsAmount": 400000,
+  "shippingFee": 30000
+}
+```
+- Success Response (200 OK):
+```json
+{
+  "message": "Promotion validated successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "voucherCode": "SAVE20",
+    "valid": true,
+    "message": "Voucher applied successfully.",
+    "discountAmount": 80000,
+    "finalShippingFee": 30000,
+    "finalTotalAmount": 350000
+  }
+}
+```
+
+## Promotion Rules (Runtime)
+- Voucher code is case-insensitive and normalized to upper-case.
+- `PERCENTAGE` discount must be less than or equal to 100.
+- `FREE_SHIP` requires `discountValue = 0`.
+- Voucher must be active and inside valid time range.
+- Voucher must pass `maxUsage` limit.
+- Voucher must satisfy `minOrderValue` when configured.
+
+## Common Error Response Examples
+
+### 400 Bad Request
+```json
+{
+  "message": "Voucher usage limit reached.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+### 404 Not Found
+```json
+{
+  "message": "Promotion not found with code: SAVE20",
+  "status": "error",
+  "statusCode": 404,
+  "data": null
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "message": "Unexpected server error.",
+  "status": "error",
+  "statusCode": 500,
+  "data": null
+}
+```

@@ -1,0 +1,231 @@
+# Chat APIs Documentation
+
+Tai lieu nay chi mo ta API (REST + STOMP) cua module chat.
+
+## 1. Authentication
+
+- REST: Header `Authorization: Bearer <access_token>`
+- STOMP CONNECT (WebSocket): Native header `Authorization: Bearer <access_token>`
+
+## 2. Common Response Wrapper (REST)
+
+Tat ca REST API tra ve theo `ApiResponse<T>`:
+
+```json
+{
+  "message": "Request processed successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {}
+}
+```
+
+## 3. REST APIs
+
+### 3.1 GET /api/chat/rooms/me
+
+- Description: Lay room cua customer hien tai, neu chua co thi tao moi.
+- Role: CUSTOMER (admin goi API nay se khong dung business flow)
+
+Response `data` (`ChatRoomResponse`):
+
+```json
+{
+  "roomId": "67dcf8e4a973df2f0cbf98a1",
+  "customerId": 12,
+  "customerEmail": "customer@example.com",
+  "customerName": "Nguyen Van A",
+  "lastMessagePreview": "Shop will check your order soon",
+  "lastMessageAt": "2026-03-21T14:20:10",
+  "adminUnreadCount": 0,
+  "customerUnreadCount": 1,
+  "createdAt": "2026-03-20T10:15:00",
+  "updatedAt": "2026-03-21T14:20:10"
+}
+```
+
+### 3.2 GET /api/chat/rooms/{roomId}/messages?page=0&size=20
+
+- Description: Lay lich su tin nhan theo trang.
+- Role: CUSTOMER (chi room cua minh), ADMIN (tat ca room)
+
+Response `data`: `Page<ChatMessageResponse>`
+
+```json
+{
+  "content": [
+    {
+      "id": "msg-001",
+      "roomId": "67dcf8e4a973df2f0cbf98a1",
+      "senderId": 12,
+      "senderEmail": "customer@example.com",
+      "senderName": "Nguyen Van A",
+      "senderRole": "CUSTOMER",
+      "messageType": "TEXT",
+      "content": "Shop oi, vot em bi xuoc",
+      "fileUrl": null,
+      "fileName": null,
+      "sentAt": "2026-03-21T14:00:00",
+      "readByCustomerAt": null,
+      "readByAdminAt": "2026-03-21T14:01:00"
+    }
+  ],
+  "totalElements": 35,
+  "totalPages": 2,
+  "number": 0,
+  "size": 20
+}
+```
+
+### 3.3 GET /api/chat/unread-count
+
+- Description:
+  - CUSTOMER: unread count theo room cua minh
+  - ADMIN: tong unread count cua tat ca room
+
+Response `data` (`ChatUnreadCountResponse`):
+
+```json
+{
+  "roomId": "67dcf8e4a973df2f0cbf98a1",
+  "unreadCount": 2
+}
+```
+
+### 3.4 POST /api/chat/rooms/{roomId}/read
+
+- Description: Danh dau da doc trong room.
+- Role: CUSTOMER/ADMIN co quyen tren room
+
+Response `data` (`ChatReadReceiptResponse`):
+
+```json
+{
+  "roomId": "67dcf8e4a973df2f0cbf98a1",
+  "readerRole": "CUSTOMER",
+  "readAt": "2026-03-21T14:30:00"
+}
+```
+
+### 3.5 POST /api/chat/upload
+
+- Content-Type: `multipart/form-data`
+- Form field bat buoc: `files` (multiple)
+- Gioi han: toi da `10` file/request
+- Gioi han tong dung luong request: toi da `5MB`
+- Description: Upload nhieu file cung luc va tra ve danh sach URL de gui qua STOMP.
+
+Response `data` (`List<ChatUploadResponse>`):
+
+```json
+[
+  {
+    "fileUrl": "https://bucket.s3.amazonaws.com/chat/chat-12345.jpg",
+    "fileName": "defect.jpg",
+    "contentType": "image/jpeg"
+  },
+  {
+    "fileUrl": "https://bucket.s3.amazonaws.com/chat/chat-67890.png",
+    "fileName": "invoice.png",
+    "contentType": "image/png"
+  }
+]
+```
+
+### 3.6 GET /api/chat/admin/inbox?page=0&size=20
+
+- Description: Inbox room cho admin (sap xep theo tin nhan moi nhat).
+- Role: ADMIN only
+
+Response `data`: `Page<ChatRoomResponse>`
+
+```json
+{
+  "content": [
+    {
+      "roomId": "67dcf8e4a973df2f0cbf98a1",
+      "customerId": 12,
+      "customerEmail": "customer@example.com",
+      "customerName": "Nguyen Van A",
+      "lastMessagePreview": "[Image] defect.jpg",
+      "lastMessageAt": "2026-03-21T14:22:00",
+      "adminUnreadCount": 1,
+      "customerUnreadCount": 0,
+      "createdAt": "2026-03-20T10:15:00",
+      "updatedAt": "2026-03-21T14:22:00"
+    }
+  ],
+  "totalElements": 14,
+  "totalPages": 1,
+  "number": 0,
+  "size": 20
+}
+```
+
+## 4. WebSocket/STOMP APIs
+
+### 4.1 Endpoint
+
+- Handshake endpoint: `/ws-chat`
+- App destination prefix: `/app`
+- User destination prefix: `/user`
+
+### 4.2 Client Send Destinations
+
+#### 4.2.1 /app/chat.send
+
+Payload (`ChatSendMessageRequest`):
+
+```json
+{
+  "roomId": "67dcf8e4a973df2f0cbf98a1",
+  "messageType": "TEXT",
+  "content": "Shop oi, em can doi tra",
+  "fileUrl": null,
+  "fileName": null
+}
+```
+
+Payload gui file/image:
+
+```json
+{
+  "roomId": "67dcf8e4a973df2f0cbf98a1",
+  "messageType": "IMAGE",
+  "content": "Anh vot bi xuoc",
+  "fileUrl": "https://bucket.s3.amazonaws.com/chat/chat-abc.jpg",
+  "fileName": "defect.jpg"
+}
+```
+
+Server ack theo user queue:
+- `/user/queue/chat.sent`
+- Payload: `ChatMessageResponse`
+
+#### 4.2.2 /app/chat.read
+
+Payload (`ChatReadRequest`):
+
+```json
+{
+  "roomId": "67dcf8e4a973df2f0cbf98a1"
+}
+```
+
+Server broadcast read receipt:
+- `/topic/chat.room.{roomId}.read`
+- Payload: `ChatReadReceiptResponse`
+
+### 4.3 Subscribe Destinations
+
+- `/topic/chat.room.{roomId}`: stream tin nhan room (`ChatMessageResponse`)
+- `/topic/chat.room.{roomId}.read`: read receipt (`ChatReadReceiptResponse`)
+- `/topic/chat.admin.inbox`: cap nhat inbox admin (`ChatRoomResponse`)
+- `/topic/chat.admin.unread`: tong unread admin (`ChatUnreadCountResponse`)
+- `/user/queue/chat.unread`: unread theo user hien tai (`ChatUnreadCountResponse`)
+
+## 5. Message Types
+
+- `TEXT`: bat buoc co `content`
+- `IMAGE`: bat buoc co `fileUrl`
+- `FILE`: bat buoc co `fileUrl`

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "860032153513",
+    "project_id": "shuttlex-50e33",
+    "storage_bucket": "shuttlex-50e33.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:860032153513:android:cdc081f790744ff2c776b8",
+        "android_client_info": {
+          "package_name": "com.example.badmintonshop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "860032153513-nk0ult9ud4hhjsh8ct8l743h69llctrt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCFyFTtzVBy037BMhOA9xonVfWS_00wvc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "860032153513-nk0ult9ud4hhjsh8ct8l743h69llctrt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,56 @@
+﻿=== MODULE MEMBERSHIP (HẠNG THÀNH VIÊN) ===
+Base URL: /api/memberships
+Authentication: Cần truyền Header Authorization: Bearer <token>
+
+---
+1. Lấy thông tin Hạng thành viên của User hiện tại
+- Endpoint: GET /api/memberships/me
+- Quyền: Đăng nhập (User/Admin đều được)
+- Response 200:
+{
+    "message": "Lấy thông tin hạng thành viên thành công",
+    "status": "success",
+    "statusCode": 200,
+    "data": {
+        "userId": 10,
+        "email": "user@example.com",
+        "tier": {
+            "id": 1,
+            "name": "BRONZE",
+            "minPoints": 0,
+            "discountPercent": 0.0,
+            "benefits": "Default tier"
+        },
+        "currentPoints": 150,
+        "totalPoints": 150,
+        "pointsToNextTier": 0,
+        "nextTierName": null
+    }
+}
+
+---
+2. Lấy lịch sử biến động điểm của User hiện tại
+- Endpoint: GET /api/memberships/me/history
+- Quyền: Đăng nhập (User/Admin đều được)
+- Response 200:
+{
+    "message": "Lấy lịch sử tích điểm thành công",
+    "status": "success",
+    "statusCode": 200,
+    "data": [
+        {
+            "id": 1,
+            "points": 150,
+            "reason": "EARNED_FROM_ORDER",
+            "referenceId": 1032,
+            "createdAt": "2026-03-23T10:45:00"
+        },
+        {
+            "id": 2,
+            "points": -50,
+            "reason": "EXCHANGED_VOUCHER",
+            "referenceId": 99,
+            "createdAt": "2026-03-24T12:00:00"
+        }
+    ]
+}

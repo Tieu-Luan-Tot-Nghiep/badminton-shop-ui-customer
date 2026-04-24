@@ -1,0 +1,369 @@
+# Auth Module API Documentation
+
+This document describes all endpoints in the Authentication module using a standardized response wrapper.
+
+## Standard Response Wrapper
+
+### Success (Object)
+```json
+{
+  "message": "Request processed successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {}
+}
+```
+
+### Error
+```json
+{
+  "message": "Error description.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+## Endpoints
+
+### 1. Register
+- URL: `/api/auth/register`
+- Method: `POST`
+- Description: Registers a new user account.
+- Request Body:
+  ```json
+  {
+    "username": "user123",
+    "email": "user123@example.com",
+    "password": "password123",
+    "phoneNumber": "0123456789"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Register successful.",
+    "status": "success",
+    "statusCode": 200,
+    "data": {
+      "token": "jwt_token_here",
+      "username": "user123",
+      "role": "CUSTOMER"
+    }
+  }
+  ```
+
+### 2. Login
+- URL: `/api/auth/login`
+- Method: `POST`
+- Description: Authenticates a user and returns JWT access and refresh tokens.
+- Request Body:
+  ```json
+  {
+    "username": "user123",
+    "password": "password123"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Login successful.",
+    "status": "success",
+    "statusCode": 200,
+    "data": {
+      "token": "jwt_access_token_here",
+      "refreshToken": "jwt_refresh_token_here",
+      "username": "user123",
+      "role": "CUSTOMER"
+    }
+  }
+  ```
+
+### 3. Refresh Token
+- URL: `/api/auth/refresh`
+- Method: `POST`
+- Description: Generates a new access token from a valid refresh token.
+- Request Body:
+  ```json
+  {
+    "refreshToken": "jwt_refresh_token_here"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Token refreshed successfully.",
+    "status": "success",
+    "statusCode": 200,
+    "data": {
+      "token": "new_jwt_access_token_here",
+      "refreshToken": "new_jwt_refresh_token_here"
+    }
+  }
+  ```
+
+### 4. Logout
+- URL: `/api/auth/logout`
+- Method: `POST`
+- Description: Invalidates the refresh token.
+- Request Body:
+  ```json
+  {
+    "refreshToken": "jwt_refresh_token_here"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Logout successful.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 5. Verify Email
+- URL: `/api/auth/verify-email`
+- Method: `GET`
+- Description: Verifies user email using `token` and `email` query parameters.
+- Query Params:
+  - `token` (String)
+  - `email` (String)
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Xac thuc email thanh cong! Ban hien co the dang nhap.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 6. Resend Verification Email
+- URL: `/api/auth/resend-verification`
+- Method: `POST`
+- Authentication: Không yêu cầu (public).
+- Description: Resends verification token if account is not verified.
+- Request Body:
+  ```json
+  {
+    "email": "user123@example.com"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Da gui ma xac thuc moi. Vui long kiem tra email cua ban.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 7. Forgot Password
+- URL: `/api/auth/forgot-password`
+- Method: `POST`
+- Description: Sends password reset link to the email.
+- Request Body:
+  ```json
+  {
+    "email": "user123@example.com"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Da gui link dat lai mat khau vao email cua ban. Vui long kiem tra hop thu.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 8. Reset Password
+- URL: `/api/auth/reset-password`
+- Method: `POST`
+- Description: Resets password using reset token.
+- Request Body:
+  ```json
+  {
+    "token": "reset_token_here",
+    "newPassword": "new_password_123"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Dat lai mat khau thanh cong! Vui long quay lai ung dung de dang nhap.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 9. Change Password
+- URL: `/api/auth/change-password`
+- Method: `POST`
+- Authentication: Required (Bearer Token)
+- Description: Allows logged-in user to change password.
+- Request Body:
+  ```json
+  {
+    "oldPassword": "current_password",
+    "newPassword": "new_password_123"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Doi mat khau thanh cong.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 10. Get Current User Profile
+- URL: `/api/auth/me`
+- Method: `GET`
+- Authentication: Required (Bearer Token)
+- Description: Returns profile of current user.
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Get profile successful.",
+    "status": "success",
+    "statusCode": 200,
+    "data": {
+      "id": 1,
+      "fullName": "user123",
+      "email": "user123@example.com",
+      "birthDate": "2000-01-01",
+      "avatar": "https://s3-bucket-url.com/avatar/1.png",
+      "role": "CUSTOMER"
+    }
+  }
+  ```
+
+### 11. Update User Profile
+- URL: `/api/auth/profile`
+- Method: `PUT`
+- Authentication: Required (Bearer Token)
+- Description: Updates profile information of current user.
+- Request Body:
+  ```json
+  {
+    "fullName": "Ho va ten moi",
+    "phoneNumber": "0123456789",
+    "birthDate": "2000-01-01"
+  }
+  ```
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Cap nhat thong tin ca nhan thanh cong.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 12. Upload Avatar
+- URL: `/api/auth/profile/avatar`
+- Method: `POST`
+- Authentication: Required (Bearer Token)
+- Description: Uploads new avatar image (max 5MB).
+- Request Body: `multipart/form-data` with `file` field.
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Cap nhat anh dai dien thanh cong.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+### 13. Social Login (Google/Facebook)
+- Google URL: `/oauth2/authorization/google`
+- Facebook URL: `/oauth2/authorization/facebook`
+- Method: `GET`
+- Description: Redirects user to OAuth2 provider login page.
+- Success Response: Redirect response (302 Found), no JSON body.
+
+### 14. Delete Account (Soft Delete)
+- URL: `/api/auth/account`
+- Method: `DELETE`
+- Authentication: Required (Bearer Token)
+- Description: Sets user status to INACTIVE.
+- Success Response (200 OK):
+  ```json
+  {
+    "message": "Tai khoan cua ban da duoc vo hieu hoa.",
+    "status": "success",
+    "statusCode": 200,
+    "data": null
+  }
+  ```
+
+## Common Error Response Examples
+
+### 400 Bad Request
+```json
+{
+  "message": "Validation failed.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "message": "Invalid credentials or token expired.",
+  "status": "error",
+  "statusCode": 401,
+  "data": null
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "message": "Access denied or email not verified.",
+  "status": "error",
+  "statusCode": 403,
+  "data": null
+}
+```
+
+### 409 Conflict
+```json
+{
+  "message": "Username or email already exists.",
+  "status": "error",
+  "statusCode": 409,
+  "data": null
+}
+```
+
+### 429 Too Many Requests
+```json
+{
+  "message": "Rate limit exceeded.",
+  "status": "error",
+  "statusCode": 429,
+  "data": null
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "message": "Unexpected server error.",
+  "status": "error",
+  "statusCode": 500,
+  "data": null
+}
+```

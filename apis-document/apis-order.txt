@@ -1,0 +1,307 @@
+### 1. Cart APIs
+
+### 1.1. Get My Cart
+- URL: /api/cart
+- Method: GET
+- Description: Lấy giỏ hàng hiện tại của user đăng nhập.
+- Authentication: Bắt buộc (Bearer token).
+- Success Response (200 OK): CartResponse.
+
+### 1.2. Add Item To Cart
+- URL: /api/cart/items
+- Method: POST
+- Description: Thêm sản phẩm variant vào giỏ.
+- Authentication: Bắt buộc (Bearer token).
+- Request Body (AddCartItemRequest):
+  {
+    "variantId": 3,
+    "quantity": 2
+  }
+- Success Response (200 OK): CartResponse.
+
+### 1.3. Update Item Quantity
+- URL: /api/cart/items/{variantId}
+- Method: PUT
+- Description: Cập nhật số lượng sản phẩm theo variant trong giỏ.
+- Authentication: Bắt buộc (Bearer token).
+- Path Parameters:
+  - variantId (Long)
+- Request Body (UpdateCartItemRequest):
+  {
+    "quantity": 5
+  }
+- Success Response (200 OK): CartResponse.
+
+### 1.4. Remove Item From Cart
+- URL: /api/cart/items/{variantId}
+- Method: DELETE
+- Description: Xóa một sản phẩm variant khỏi giỏ.
+- Authentication: Bắt buộc (Bearer token).
+- Path Parameters:
+  - variantId (Long)
+- Success Response (200 OK): CartResponse.
+
+### 1.5. Clear Cart
+- URL: /api/cart
+- Method: DELETE
+- Description: Xóa toàn bộ sản phẩm trong giỏ.
+- Authentication: Bắt buộc (Bearer token).
+- Success Response (200 OK): CartResponse (items rỗng).
+
+Note: GET /api/cart hiện được cấu hình permitAll trong SecurityConfig (guest cart). Tuy nhiên CartController dùng Principal nên thực tế vẫn cần đăng nhập để hoạt động đúng.
+
+
+### 2. Order APIs
+
+### 2.0. Checkout Context (Address Book)
+- URL: /api/orders/checkout-context
+- Method: GET
+- Description: Lấy danh sách địa chỉ đã lưu và địa chỉ mặc định để tự động điền màn hình đặt hàng.
+- Authentication: Bắt buộc (Bearer token).
+- Success Response (200 OK):
+  {
+    "addresses": [
+      {
+        "id": 11,
+        "receiverName": "Nguyen Van A",
+        "receiverPhone": "0909123456",
+        "shippingAddress": "123 Nguyen Trai, Phuong 2, Quan 1, TP.HCM",
+        "isDefault": true
+      }
+    ],
+    "defaultAddress": {
+      "id": 11,
+      "receiverName": "Nguyen Van A",
+      "receiverPhone": "0909123456",
+      "shippingAddress": "123 Nguyen Trai, Phuong 2, Quan 1, TP.HCM",
+      "isDefault": true
+    }
+  }
+
+### 2.1. Preview Order
+- URL: /api/orders/preview
+- Method: POST
+- Description: Xem trước đơn hàng trước khi đặt (tính itemsAmount, shippingFee, totalAmount).
+- Shipping Fee: được tính realtime từ GHN (staging) theo địa chỉ nhận và trọng lượng/kích thước package.
+- Authentication: Bắt buộc (Bearer token).
+- Request Body (CreateOrderRequest):
+  {
+    "items": [
+      {
+        "variantId": 3,
+        "quantity": 1
+      },
+      {
+        "variantId": 4,
+        "quantity": 2
+      }
+    ],
+    "addressId": 11,
+    "voucherCode": "MUAXUAN2026",
+    "receiverName": "Nguyen Van A",
+    "receiverPhone": "0909123456",
+    "shippingAddress": "123 Nguyen Trai, Q1, TP.HCM",
+    "orderNote": "Giao gio hanh chinh",
+    "paymentMethod": "VNPAY"
+  }
+- Notes:
+  - Ưu tiên dùng addressId để chọn địa chỉ từ sổ địa chỉ.
+  - Dữ liệu địa chỉ cần đầy đủ (specificAddress, ward, district, province) để map sang GHN DistrictID/WardCode.
+  - Hệ thống map địa chỉ theo GHN theo thứ tự ưu tiên:
+    1) Nếu district là số thuần: xem như DistrictID GHN.
+    2) Nếu ward trùng WardCode: dùng trực tiếp WardCode.
+    3) Nếu là tên: map theo tên chuẩn hóa (hỗ trợ viết tắt như Q1, P. Ben Nghe, TP.HCM).
+  - Nếu không map được quận/huyện hoặc phường/xã, API trả về 400 (không gọi GHN) để tránh lỗi 502 từ upstream.
+  - Nên lấy danh mục chuẩn từ các API shipping:
+    - GET /api/shipping/provinces
+    - GET /api/shipping/provinces/{provinceId}/districts
+    - GET /api/shipping/districts/{districtId}/wards
+  - Nếu không gửi addressId, hệ thống dùng receiverName/receiverPhone/shippingAddress nếu có.
+  - Nếu không gửi cả 2, hệ thống tự động fallback địa chỉ mặc định của user.
+  - voucherCode là optional, chuẩn bị sẵn cho module Promotion.
+- Success Response (200 OK): OrderPreviewResponse.
+
+### 2.2. Purchase (Place Order)
+- URL: /api/orders
+- Method: POST
+- Description: Đặt hàng chính thức.
+  - Nếu paymentMethod = COD: tạo đơn và trả thông tin đơn.
+  - Nếu paymentMethod = VNPAY: tạo đơn và trả thêm paymentUrl để redirect cổng thanh toán.
+  - Hệ thống lưu snapshot chính xác địa chỉ đã chọn tại thời điểm đặt.
+- Authentication: Bắt buộc (Bearer token).
+- Request Body: giống CreateOrderRequest ở mục 2.1.
+- Notes:
+  - voucherCode là optional, chuẩn bị sẵn cho module Promotion.
+  - shippingFee trong đơn được lấy từ GHN, tính theo VNĐ.
+  - Khi đơn chuyển trạng thái CONFIRMED (ví dụ thanh toán VNPAY thành công), hệ thống tự tạo vận đơn GHN và lưu shippingCode.
+- Success Response (200 OK): OrderResponse.
+
+### 2.3. Get My Orders
+- URL: /api/orders/my
+- Method: GET
+- Description: Lấy danh sách đơn hàng của user đăng nhập (mới nhất trước).
+- Authentication: Bắt buộc (Bearer token).
+- Query Parameters:
+  - page (int, default 0)
+  - size (int, default 10)
+- Success Response (200 OK): Page-like object.
+  {
+    "content": [
+      {
+        "id": 120,
+        "orderCode": "ORD-20260320153000-AB12CD34",
+        "status": "PENDING",
+        "paymentMethod": "VNPAY",
+        "paymentStatus": "PENDING",
+        "totalAmount": 1250000,
+        "createdAt": "2026-03-20T15:30:00"
+      }
+    ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 45,
+    "totalPages": 5,
+    "last": false
+  }
+
+### 2.4. VNPAY Return URL (Frontend-facing)
+- URL: /api/orders/vnpay-return
+- Method: GET
+- Description: Endpoint người dùng được redirect về sau khi thanh toán để frontend hiển thị kết quả đơn hàng.
+- Authentication: Không yêu cầu.
+- Query Parameters: nhận params chuẩn VNPAY (vnp_*).
+- Success Response (200 OK):
+  {
+    "orderCode": "ORD-20260320153000-AB12CD34",
+    "paymentStatus": "COMPLETED",
+    "orderStatus": "CONFIRMED",
+    "responseCode": "00"
+  }
+
+### 2.13. OrderResponse shipping fields
+- order response đã bổ sung các trường:
+  - shippingCode: mã vận đơn GHN
+  - shippingProvider: hiện tại là GHN
+  - shippingExpectedDeliveryAt: thời gian dự kiến giao hàng
+
+### 2.14. Admin Confirm COD Order
+- URL: /api/orders/admin/{orderCode}/confirm-cod
+- Method: POST
+- Description: Admin xác nhận đơn COD để chuyển đơn sang CONFIRMED, commit tồn kho và trigger tạo vận đơn GHN.
+- Authentication: ADMIN.
+- Query Params:
+  - note (optional): ghi chú xác nhận.
+
+### 2.5. VNPAY IPN (Backend-to-backend)
+- URL: /api/orders/vnpay-ipn
+- Method: GET
+- Description: Endpoint webhook để VNPAY gọi ngầm xác nhận giao dịch; backend phải xử lý idempotent và cập nhật DB ngay cả khi user đóng trình duyệt.
+- Authentication: Không yêu cầu (VNPAY server gọi trực tiếp).
+- Query Parameters: nhận params chuẩn VNPAY (vnp_*).
+- Success Response (200 OK): JSON đúng chuẩn VNPAY (không thêm field tùy ý), ví dụ:
+  {
+    "RspCode": "00",
+    "Message": "Confirm Success"
+  }
+
+### 2.6. Cancel Order (Customer)
+- URL: /api/orders/{orderCode}/cancel
+- Method: POST
+- Description: Khách chủ động hủy đơn (khi đơn chưa giao).
+- Authentication: Bắt buộc (Bearer token).
+- Request Body:
+  {
+    "reason": "Đổi ý, muốn đổi cây vợt khác"
+  }
+- Business:
+  - Hệ thống chuyển trạng thái đơn sang CANCELLED.
+  - Nếu chưa thanh toán: rollback tồn kho theo cơ chế giữ chỗ.
+  - Nếu đã thanh toán VNPAY: tạo log cần hoàn tiền cho Admin/Kế toán.
+  - Gửi email thông báo hủy đơn cho khách hàng.
+
+### 2.7. Auto Cancel VNPAY Timeout (System)
+- Trigger: Job scheduler chạy định kỳ.
+- Rule: Đơn VNPAY ở trạng thái chờ thanh toán quá 15 phút sẽ tự động hủy.
+- Business:
+  - Chuyển trạng thái sang CANCELLED.
+  - Publish ORDER_CANCELLED_EVENT qua RabbitMQ để Inventory rollback reserved -> available.
+
+### 2.8. Create Return Request (Customer)
+- URL: /api/orders/{orderCode}/returns
+- Method: POST
+- Description: Khách gửi yêu cầu trả hàng/hoàn tiền cho đơn đã DELIVERED.
+- Authentication: Bắt buộc (Bearer token).
+- Request Body:
+  {
+    "reason": "Giày giao sai size",
+    "refundMethod": "BANK_TRANSFER",
+    "bankAccountName": "Nguyen Van A",
+    "bankAccountNumber": "123456789",
+    "bankName": "Vietcombank",
+    "evidenceUrls": [
+      "https://.../video-unbox.mp4",
+      "https://.../photo-damage.jpg"
+    ],
+    "items": [
+      { "orderItemId": 101, "quantity": 1 }
+    ]
+  }
+
+### 2.9. Admin Approve Return
+- URL: /api/orders/admin/returns/{returnRequestId}/approve?note=...
+- Method: POST
+- Description: Admin duyệt yêu cầu trả hàng.
+- Authentication: ADMIN.
+- State:
+  - ReturnRequest: REQUESTED -> AWAITING_RETURN
+  - Order: RETURN_REQUESTED -> AWAITING_RETURN
+
+### 2.10. Admin Reject Return
+- URL: /api/orders/admin/returns/{returnRequestId}/reject?note=...
+- Method: POST
+- Description: Admin từ chối yêu cầu trả hàng (bắt buộc lý do).
+- Authentication: ADMIN.
+- State:
+  - ReturnRequest: REQUESTED -> REJECTED
+  - Order: RETURN_REQUESTED -> DELIVERED
+
+### 2.11. Admin Receive Returned Items
+- URL: /api/orders/admin/returns/{returnRequestId}/receive
+- Method: POST
+- Description: Kho xác nhận nhận hàng hoàn và xử lý từng item.
+- Authentication: ADMIN.
+- Request Body:
+  {
+    "note": "Đã nhận đủ hàng",
+    "items": [
+      { "orderItemId": 101, "quantity": 1, "action": "RESTOCK" },
+      { "orderItemId": 102, "quantity": 1, "action": "SCRAP" }
+    ]
+  }
+- Inventory:
+  - RESTOCK: cộng lại available_quantity (Stock In)
+  - SCRAP: không cộng lại tồn khả dụng
+
+### 2.12. Admin Mark Refunded
+- URL: /api/orders/admin/returns/{returnRequestId}/refund?note=...
+- Method: POST
+- Description: Admin/Kế toán xác nhận đã hoàn tiền.
+- Authentication: ADMIN.
+- State:
+  - ReturnRequest: RECEIVED -> REFUNDED
+  - Order: RETURN_RECEIVED -> REFUNDED
+  - PaymentStatus -> REFUNDED
+
+
+### 3. Payment Method Values
+- COD
+- VNPAY
+- MOMO
+- CREDIT_CARD
+
+
+### 4. Error Handling (Chung)
+- 400 Bad Request: Dữ liệu request không hợp lệ hoặc thiếu field bắt buộc.
+- 401 Unauthorized: Thiếu hoặc sai Bearer token ở endpoint yêu cầu đăng nhập.
+- 404 Not Found: Không tìm thấy user/variant/order.
+- 500 Internal Server Error: Lỗi hệ thống không mong muốn.

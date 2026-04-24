@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ShuttleX</string>
+
+    <!-- Replace these placeholders with your real Facebook App ID and Client Token -->
+    <string name="facebook_app_id">1707863910627870</string>
+    <string name="fb_login_protocol_scheme">fb1707863910627870</string>
+    <string name="facebook_client_token">a2ffe50500d8576d4daeac0ebfb5ac5a</string>
+</resources>

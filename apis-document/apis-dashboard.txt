@@ -1,0 +1,151 @@
+Module Dashboard - Thống kê & Báo cáo (Chỉ dành cho ADMIN)
+
+--- MÔ TẢ CHUNG ---
+- Các APIs này cung cấp số liệu thống kê cho trang Dashboard của Quản trị viên (Admin).
+- Trạng thái đơn hàng hợp lệ để tính doanh thu là: COMPLETED và DELIVERED.
+- Quy định phân quyền: Mọi Request đều yêu cầu Header 'Authorization: Bearer <token>' của tài khoản có Role ADMIN.
+
+--- DANH SÁCH APIS ---
+
+1. BÁO CÁO DOANH THU (THEO CHU KỲ)
+- Mô tả: Trả về doanh thu và số lượng đơn hàng theo ngày, tháng, hoặc năm...
+- Method: GET
+- Endpoint: /api/admin/dashboard/revenue
+- Query Parameters: 
+  + startDate (optional): Ngày bắt đầu (Format: YYYY-MM-DD, mặc định: 30 ngày trước).
+  + endDate (optional): Ngày kết thúc (Format: YYYY-MM-DD, mặc định: hôm nay).
+  + groupBy (optional): Nhóm theo thời gian (Values: "DAY" | "MONTH" | "YEAR", mặc định: "DAY").
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy báo cáo doanh thu thành công",
+  "data": [
+    {
+      "period": "2026-03-22",
+      "totalRevenue": 2450.50,
+      "totalOrders": 12
+    },
+    {
+      "period": "2026-03-23",
+      "totalRevenue": 1280.00,
+      "totalOrders": 5
+    }
+  ]
+}
+
+
+2. BÁO CÁO DOANH THU THEO THƯƠNG HIỆU (BRAND)
+- Mô tả: Thống kê xem Yonex, Victor, Li-Ning... từng hãng đóng góp bao nhiêu tổng doanh thu và tổng số lượng sản phẩm bán ra.
+- Method: GET
+- Endpoint: /api/admin/dashboard/revenue-by-brand
+- Query Parameters: 
+  + startDate (optional): Ngày bắt đầu (Format: YYYY-MM-DD, mặc định: 30 ngày trước).
+  + endDate (optional): Ngày kết thúc (Format: YYYY-MM-DD, mặc định: hôm nay).
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy doanh thu theo thương hiệu thành công",
+  "data": [
+    {
+      "brandName": "Yonex",
+      "totalRevenue": 15000.00,
+      "itemsSold": 80
+    },
+    {
+      "brandName": "Victor",
+      "totalRevenue": 8000.50,
+      "itemsSold": 45
+    }
+  ]
+}
+
+
+3. DANH SÁCH SẢN PHẨM BÁN CHẠY NHẤT (TOP SELLING)
+- Mô tả: Danh sách bảng xếp hạng các mặt hàng bán chạy nhất dựa trên tổng số lượng `variant` đã bán.
+- Method: GET
+- Endpoint: /api/admin/dashboard/top-selling
+- Query Parameters: 
+  + startDate (optional): Ngày bắt đầu (Format: YYYY-MM-DD, mặc định: 30 ngày trước).
+  + endDate (optional): Ngày kết thúc (Format: YYYY-MM-DD, mặc định: hôm nay).
+  + limit (optional): Số lượng sản phẩn hiển thị (mặc định: 10).
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy danh sách sản phẩm bán chạy thành công",
+  "data": [
+    {
+      "productId": 101,
+      "productName": "Vợt cầu lông Yonex Astrox 99 Pro",
+      "slug": "vot-cau-long-yonex-astrox-99-pro",
+      "thumbnailUrl": "https://img.example.com/astrox.jpg",
+      "totalQuantitySold": 156,
+      "totalRevenue": 38844.00
+    },
+    {
+      "productId": 54,
+      "productName": "Giày Yonex Power Cushion 65Z",
+      "slug": "giay-yonex-power-cushion-65z",
+      "thumbnailUrl": "https://img.example.com/65z.jpg",
+      "totalQuantitySold": 98,
+      "totalRevenue": 13720.00
+    }
+  ]
+}
+
+
+4. THỐNG KÊ TỔNG GIÁ TRỊ KHO HÀNG (INVENTORY VALUE)
+- Mô tả: Lọc lại toàn bộ số lượng thực tế trong kho sau đó nhân cho giá của từng biến thể Variant, để tính xem Cửa hàng đang đọng bao nhiêu tiền hàng hóa (Chỉ tính những item còn trong kho `> 0`).
+- Method: GET
+- Endpoint: /api/admin/dashboard/inventory-value
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy thống kê giá trị tồn kho thành công",
+  "data": {
+    "totalStockQuantity": 3500,
+    "estimatedValue": 152000.00
+  }
+}
+
+
+5. KPI VÀ THÔNG TIN NHANH
+- Mô tả: Trả về các chỉ số KPI tổng hợp (tổng đơn hàng, doanh thu, người dùng mới...).
+- Method: GET
+- Endpoint: /api/admin/dashboard/kpis
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy KPIs thành công",
+  "data": { ... }
+}
+
+
+6. ĐƠN HÀNG GẦN ĐÂY
+- Mô tả: Trả về danh sách đơn hàng gần đây nhất.
+- Method: GET
+- Endpoint: /api/admin/dashboard/recent-orders
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy đơn hàng gần đây thành công",
+  "data": [ ... ]
+}
+
+
+7. CẢNH BÁO HỆ THỐNG (ALERTS)
+- Mô tả: Trả về danh sách cảnh báo (hàng sắp hết, đơn chờ xử lý...).
+- Method: GET
+- Endpoint: /api/admin/dashboard/alerts
+
+- Response (200 OK):
+{
+  "code": 200,
+  "message": "Lấy cảnh báo (alerts) thành công",
+  "data": [ ... ]
+}

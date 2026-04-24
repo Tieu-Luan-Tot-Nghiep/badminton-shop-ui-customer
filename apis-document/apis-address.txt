@@ -1,0 +1,77 @@
+# Address Module API Documentation
+
+## Endpoints
+
+### 1. Create Address
+- URL: /api/addresses
+- Method: POST
+- Authentication: Required (Bearer token)
+- Request Body:
+  {
+    "receiverName": "Nguyen Van A",
+    "phoneNumber": "0987654321",
+    "province": "TP.HCM",
+    "district": "Q1",
+    "ward": "P. Ben Nghe",
+    "specificAddress": "So 123 duong ABC",
+    "isDefault": true
+  }
+- Behavior:
+  - Validate `province/district/ward` against GHN master data at save time.
+  - Normalize common abbreviations before mapping (Q1, P., TP.HCM).
+  - Persist GHN metadata for fast shipping resolution:
+    - `ghnProvinceId`
+    - `ghnDistrictId`
+    - `ghnWardCode`
+  - If `district` is numeric-only, system treats it as GHN DistrictID.
+  - If `ward` matches WardCode, system uses that code directly.
+- Success Response: 201 Created, returns created address.
+
+### 2. Update Address
+- URL: /api/addresses/{id}
+- Method: PUT
+- Authentication: Required (Bearer token)
+- Request Body: Same as Create Address.
+- Behavior:
+  - Re-validate GHN mapping and refresh metadata fields.
+- Success Response: 200 OK, returns updated address.
+
+### 3. Delete Address
+- URL: /api/addresses/{id}
+- Method: DELETE
+- Authentication: Required (Bearer token)
+- Success Response: 200 OK.
+
+### 4. Get All Addresses
+- URL: /api/addresses
+- Method: GET
+- Authentication: Required (Bearer token)
+- Success Response: 200 OK, returns list of addresses.
+
+### 5. Get Address By Id
+- URL: /api/addresses/{id}
+- Method: GET
+- Authentication: Required (Bearer token)
+- Success Response: 200 OK, returns address details.
+
+### 6. Set Default Address
+- URL: /api/addresses/{id}/default
+- Method: PATCH
+- Authentication: Required (Bearer token)
+- Success Response: 200 OK.
+
+## Address Response (Current)
+
+{
+  "id": 11,
+  "receiverName": "Nguyen Van A",
+  "phoneNumber": "0987654321",
+  "province": "Ho Chi Minh",
+  "district": "District 1",
+  "ward": "Ben Nghe",
+  "specificAddress": "So 123 duong ABC",
+  "ghnProvinceId": 202,
+  "ghnDistrictId": 1444,
+  "ghnWardCode": "20108",
+  "isDefault": true
+}

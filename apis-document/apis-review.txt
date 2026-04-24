@@ -1,0 +1,245 @@
+# Review Module API Documentation
+
+This document describes all Review endpoints using the standardized response wrapper.
+
+## Standard Response Wrapper
+
+### Success (Object)
+```json
+{
+  "message": "Request processed successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {}
+}
+```
+
+### Error
+```json
+{
+  "message": "Error description.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+## Endpoints
+
+### 1. Create Review
+- URL: `/api/reviews`
+- Method: `POST`
+- Authentication: Required (Bearer Token)
+- Description: Creates a review for an order item that belongs to the current user.
+- Request Body:
+```json
+{
+  "orderItemId": 1,
+  "rating": 5,
+  "comment": "San pham rat tot, giao hang nhanh."
+}
+```
+- Rules:
+- Only owner of the order item can review.
+- Order must be in `DELIVERED` status.
+- Each order item can be reviewed once.
+- Success Response (200 OK):
+```json
+{
+  "message": "Review created successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "rating": 5,
+    "comment": "San pham rat tot, giao hang nhanh.",
+    "createdAt": "2026-03-20T10:30:00",
+    "userId": 12,
+    "username": "user123",
+    "productId": 5,
+    "productName": "Yonex Astrox 88D Pro",
+    "orderItemId": 101
+  }
+}
+```
+
+### 2. Update Review
+- URL: `/api/reviews/{id}`
+- Method: `PUT`
+- Authentication: Required (Bearer Token)
+- Description: Updates rating/comment of own review.
+- Request Body:
+```json
+{
+  "rating": 4,
+  "comment": "Danh gia sau 1 tuan su dung: on dinh."
+}
+```
+- Success Response (200 OK):
+```json
+{
+  "message": "Review updated successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "rating": 4,
+    "comment": "Danh gia sau 1 tuan su dung: on dinh.",
+    "createdAt": "2026-03-20T10:30:00",
+    "userId": 12,
+    "username": "user123",
+    "productId": 5,
+    "productName": "Yonex Astrox 88D Pro",
+    "orderItemId": 101
+  }
+}
+```
+
+### 3. Delete Review
+- URL: `/api/reviews/{id}`
+- Method: `DELETE`
+- Authentication: Required (Bearer Token)
+- Description: Deletes own review.
+- Success Response (200 OK):
+```json
+{
+  "message": "Review deleted successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": null
+}
+```
+
+### 4. Get Review By Id
+- URL: `/api/reviews/{id}`
+- Method: `GET`
+- Authentication: Public
+- Description: Gets review detail by id.
+- Success Response (200 OK):
+```json
+{
+  "message": "Review fetched successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "id": 1,
+    "rating": 5,
+    "comment": "San pham rat tot, giao hang nhanh.",
+    "createdAt": "2026-03-20T10:30:00",
+    "userId": 12,
+    "username": "user123",
+    "productId": 5,
+    "productName": "Yonex Astrox 88D Pro",
+    "orderItemId": 101
+  }
+}
+```
+
+### 5. Get Reviews By Product (Paged)
+- URL: `/api/reviews/products/{productId}?page=0&size=10`
+- Method: `GET`
+- Authentication: Public
+- Description: Returns paged reviews of a product (newest first).
+- Success Response (200 OK):
+```json
+{
+  "message": "Product reviews fetched successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "rating": 5,
+        "comment": "San pham rat tot.",
+        "userId": 12,
+        "username": "user123",
+        "productId": 5,
+        "productName": "Yonex Astrox 88D Pro"
+      }
+    ],
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true
+  }
+}
+```
+
+### 6. Get Review Summary By Product
+- URL: `/api/reviews/products/{productId}/summary`
+- Method: `GET`
+- Authentication: Public
+- Description: Returns average rating and total review count of a product.
+- Success Response (200 OK):
+```json
+{
+  "message": "Review summary fetched successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "productId": 5,
+    "averageRating": 4.67,
+    "totalReviews": 15
+  }
+}
+```
+
+### 7. Get My Reviews (Paged)
+- URL: `/api/reviews/my?page=0&size=10`
+- Method: `GET`
+- Authentication: Required (Bearer Token)
+- Description: Returns paged reviews created by current user.
+- Success Response (200 OK):
+```json
+{
+  "message": "My reviews fetched successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "rating": 4,
+        "comment": "Danh gia cap nhat.",
+        "productId": 5,
+        "productName": "Yonex Astrox 88D Pro"
+      }
+    ],
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true
+  }
+}
+```
+
+## Common Error Response Examples
+
+### 400 Bad Request
+```json
+{
+  "message": "Only delivered orders can be reviewed.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+### 404 Not Found
+```json
+{
+  "message": "Review not found with id: 1",
+  "status": "error",
+  "statusCode": 404,
+  "data": null
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "message": "Unauthorized",
+  "status": "error",
+  "statusCode": 401,
+  "data": null
+}
+```

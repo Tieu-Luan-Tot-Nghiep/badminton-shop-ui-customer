@@ -1,0 +1,151 @@
+# Inventory Module API Documentation
+
+This document describes Inventory endpoints for system integration and admin operations.
+
+## Standard Response Wrapper
+
+### Success
+```json
+{
+  "message": "Request processed successfully.",
+  "status": "success",
+  "statusCode": 200,
+  "data": {}
+}
+```
+
+### Error
+```json
+{
+  "message": "Error description.",
+  "status": "error",
+  "statusCode": 400,
+  "data": null
+}
+```
+
+## 1. System APIs (Internal / Microservice)
+
+### 1.1 Check Availability
+- URL: `/api/inventory/system/check-availability`
+- Method: `POST`
+- Description: Check sellable quantity (`available_quantity`) for each variant.
+- Request Body:
+```json
+{
+  "items": [
+    { "variantId": 10, "quantity": 2 },
+    { "variantId": 11, "quantity": 1 }
+  ]
+}
+```
+
+### 1.2 Reserve Inventory
+- URL: `/api/inventory/system/reserve`
+- Method: `POST`
+- Description: Move quantity from available to reserved when order is pending.
+- Request Body:
+```json
+{
+  "referenceCode": "ORD-202603201201-ABCD1234",
+  "note": "Reserve for pending payment",
+  "items": [
+    { "variantId": 10, "quantity": 2 }
+  ]
+}
+```
+
+### 1.3 Commit Inventory
+- URL: `/api/inventory/system/commit`
+- Method: `POST`
+- Description: Deduct inventory after payment success by removing from reserved quantity.
+- Request Body:
+```json
+{
+  "referenceCode": "ORD-202603201201-ABCD1234",
+  "note": "Commit after payment completed",
+  "items": [
+    { "variantId": 10, "quantity": 2 }
+  ]
+}
+```
+
+### 1.4 Rollback Inventory
+- URL: `/api/inventory/system/rollback`
+- Method: `POST`
+- Description: Return reserved quantity back to available when order cancelled/expired.
+- Request Body:
+```json
+{
+  "referenceCode": "ORD-202603201201-ABCD1234",
+  "note": "Rollback due to cancelled order",
+  "items": [
+    { "variantId": 10, "quantity": 2 }
+  ]
+}
+```
+
+## 2. Admin APIs
+
+### 2.1 Stock In
+- URL: `/api/inventory/admin/stock-in`
+- Method: `POST`
+- Description: Create stock-in receipt (purchase request), increase available stock.
+- Request Body:
+```json
+{
+  "variantId": 10,
+  "quantity": 100,
+  "unitCost": 1500000,
+  "note": "Import from supplier A"
+}
+```
+
+### 2.2 Stock Out
+- URL: `/api/inventory/admin/stock-out`
+- Method: `POST`
+- Description: Create stock-out receipt (return supplier/disposal), decrease available stock.
+- Request Body:
+```json
+{
+  "variantId": 10,
+  "quantity": 5,
+  "note": "Damaged items disposal"
+}
+```
+
+### 2.3 Stocktake Adjustment
+- URL: `/api/inventory/admin/stocktake-adjustment`
+- Method: `POST`
+- Description: Periodic stocktake adjustment to align system quantity with physical count.
+- Request Body:
+```json
+{
+  "variantId": 10,
+  "actualAvailableQuantity": 97,
+  "note": "Month-end stocktake adjustment"
+}
+```
+
+### 2.4 Stock Ledger
+- URL: `/api/inventory/admin/ledger/{variantId}?page=0&size=20`
+- Method: `GET`
+- Description: Return full inventory movement history (bank statement style).
+
+### 2.5 Low Stock Alerts
+- URL: `/api/inventory/admin/low-stock?threshold=5`
+- Method: `GET`
+- Description: Return variants where available quantity is below threshold.
+
+## 3. RabbitMQ Integration
+
+- Exchange: `inventory.exchange`
+- Queue: `inventory.command.queue`
+- Routing key: `inventory.command.routingKey`
+- Message contract: `InventoryCommandMessage`
+- Supported command types:
+- `RESERVE`
+- `COMMIT`
+- `ROLLBACK`
+
+This allows Order service to send asynchronous inventory commands through RabbitMQ.
