@@ -3,95 +3,22 @@
 ### 1. Get Provinces
 - URL: /api/shipping/provinces
 - Method: GET
-- Description: Lấy danh mục tỉnh/thành từ GHN. Kết quả được cache trong Redis 7 ngày.
+- Description: Lấy danh mục tỉnh/thành từ GHN.
 - Authentication: Không yêu cầu (public).
-- Success Response (200 OK):
-```json
-{
-  "message": "Provinces fetched successfully.",
-  "status": "success",
-  "statusCode": 200,
-  "data": [
-    {
-      "provinceId": 202,
-      "provinceName": "Hồ Chí Minh"
-    },
-    {
-      "provinceId": 201,
-      "provinceName": "Hà Nội"
-    }
-  ]
-}
-```
 
 ### 2. Get Districts By Province
 - URL: /api/shipping/provinces/{provinceId}/districts
 - Method: GET
-- Description: Lấy danh mục quận/huyện theo tỉnh từ GHN. Kết quả được cache trong Redis 7 ngày.
+- Description: Lấy danh mục quận/huyện theo tỉnh từ GHN.
 - Authentication: Không yêu cầu (public).
-- Path Parameters:
-  - provinceId (Integer, required): ID của tỉnh/thành (lấy từ endpoint #1)
-- Success Response (200 OK):
-```json
-{
-  "message": "Districts fetched successfully.",
-  "status": "success",
-  "statusCode": 200,
-  "data": [
-    {
-      "districtId": 1444,
-      "districtName": "Quận 1",
-      "provinceId": 202
-    },
-    {
-      "districtId": 1442,
-      "districtName": "Quận 3",
-      "provinceId": 202
-    }
-  ]
-}
-```
 
 ### 3. Get Wards By District
 - URL: /api/shipping/districts/{districtId}/wards
 - Method: GET
-- Description: Lấy danh mục phường/xã theo quận/huyện từ GHN. Kết quả được cache trong Redis 7 ngày.
+- Description: Lấy danh mục phường/xã theo quận/huyện từ GHN.
 - Authentication: Không yêu cầu (public).
-- Path Parameters:
-  - districtId (Integer, required): ID của quận/huyện (lấy từ endpoint #2)
-- Success Response (200 OK):
-```json
-{
-  "message": "Wards fetched successfully.",
-  "status": "success",
-  "statusCode": 200,
-  "data": [
-    {
-      "wardCode": "20108",
-      "wardName": "Phường Bến Nghé",
-      "districtId": 1444
-    },
-    {
-      "wardCode": "20109",
-      "wardName": "Phường Bến Thành",
-      "districtId": 1444
-    }
-  ]
-}
-```
 
-### 3.1 Redis Cache Strategy
-- **Cache Keys:**
-  - `ghn:provinces` — cache tất cả provinces
-  - `ghn:districts:{provinceId}` — cache districts theo province
-  - `ghn:wards:{districtId}` — cache wards theo district
-- **Cache TTL:** 7 ngày (master data ít thay đổi)
-- **Cache Logic:**
-  1. Kiểm tra Redis cache trước
-  2. Nếu có cache → trả về ngay (latency ~10ms)
-  3. Nếu không có → gọi GHN API → lưu vào cache → trả về (latency ~500ms)
-
-### 3.2 Address Mapping Notes (for Order Preview/Purchase)
+### 3.1 Address Mapping Notes (for Order Preview/Purchase)
 - Để tính phí ship GHN chính xác, nên lấy dữ liệu từ 3 API danh mục phía trên.
 - Có thể lưu vào địa chỉ user theo 2 cách:
   - `district`: lưu DistrictID (dạng số) hoặc tên quận/huyện đúng theo GHN.

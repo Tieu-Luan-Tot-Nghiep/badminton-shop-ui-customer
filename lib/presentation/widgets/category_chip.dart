@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/constants/app_colors.dart';
 
@@ -6,12 +7,12 @@ class CategoryChip extends StatelessWidget {
   const CategoryChip({
     super.key,
     required this.label,
-    required this.icon,
+    required this.iconAsset,
     this.onTap,
   });
 
   final String label;
-  final IconData icon;
+  final String iconAsset;
   final VoidCallback? onTap;
 
   @override
@@ -35,7 +36,17 @@ class CategoryChip extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(icon, color: AppColors.primaryContainer, size: 30),
+                child: Center(
+                  child: SvgPicture.asset(
+                    iconAsset,
+                    width: 30,
+                    height: 30,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.primaryContainer,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
             ),
             const SizedBox(height: 10),
             Text(

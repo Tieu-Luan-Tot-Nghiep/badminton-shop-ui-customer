@@ -11,6 +11,7 @@ import 'edit_profile_page.dart';
 import 'change_password_page.dart';
 import 'address_list_page.dart';
 import 'order_history_page.dart';
+import 'membership_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
@@ -42,7 +43,9 @@ class ProfilePage extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final profile = controller.userProfile;
-        final name = (profile?.fullName ?? controller.session?.username ?? 'NGƯỜI DÙNG').toUpperCase();
+        final name =
+            (profile?.fullName ?? controller.session?.username ?? 'NGƯỜI DÙNG')
+                .toUpperCase();
         final rank = _toRankLabel(profile?.role ?? controller.session?.role);
         final avatarUrl = profile?.avatar;
 
@@ -120,6 +123,22 @@ class ProfilePage extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 14),
+            _buildActionTile(
+              context,
+              icon: Icons.card_membership_rounded,
+              title: 'TÍCH ĐIỂM THÀNH VIÊN',
+              subtitle: 'Điểm thưởng & Quyền lợi',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MembershipPage(
+                    authController: controller,
+                    onNavigateToHome: onNavigateToHome,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 28),
             _buildSectionHeader(context, 'HỆ THỐNG', 'Bảo mật'),
             const SizedBox(height: 12),
@@ -168,14 +187,16 @@ class ProfilePage extends StatelessWidget {
               ? NetworkImage(controller.userProfile!.avatar!)
               : null,
           child: controller.userProfile?.avatar == null
-              ? const Icon(Icons.person_rounded, color: AppColors.textSecondary, size: 20)
+              ? const Icon(
+                  Icons.person_rounded,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                )
               : null,
         ),
       ],
     );
   }
-
-
 
   Widget _buildSectionHeader(
     BuildContext context,
@@ -211,7 +232,12 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildAvatarSection(BuildContext context, String name, String rank, String? avatarUrl) {
+  Widget _buildAvatarSection(
+    BuildContext context,
+    String name,
+    String rank,
+    String? avatarUrl,
+  ) {
     return Column(
       children: [
         Stack(
@@ -224,7 +250,10 @@ class ProfilePage extends StatelessWidget {
                 color: Colors.white.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(36),
                 image: avatarUrl != null && avatarUrl.isNotEmpty
-                    ? DecorationImage(image: NetworkImage(avatarUrl), fit: BoxFit.cover)
+                    ? DecorationImage(
+                        image: NetworkImage(avatarUrl),
+                        fit: BoxFit.cover,
+                      )
                     : null,
               ),
               child: avatarUrl == null || avatarUrl.isEmpty
@@ -372,17 +401,30 @@ class ProfilePage extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: AppColors.surfaceContainer,
-          title: const Text('XÁC NHẬN ĐĂNG XUẤT', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
-          content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?'),
+          title: const Text(
+            'XÁC NHẬN ĐĂNG XUẤT',
+            style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white),
+          ),
+          content: const Text(
+            'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?',
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('HỦY', style: TextStyle(color: AppColors.textSecondary)),
+              child: const Text(
+                'HỦY',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD02A00)),
-              child: const Text('ĐĂNG XUẤT', style: TextStyle(fontWeight: FontWeight.w800)),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFD02A00),
+              ),
+              child: const Text(
+                'ĐĂNG XUẤT',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
           ],
         );

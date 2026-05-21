@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../data/datasources/shop_local_data_source.dart';
@@ -399,7 +400,7 @@ class _ShopPageState extends State<ShopPage> {
         itemBuilder: (context, index) {
           final item = _controller.categories[index];
           final selected = item.slug == _controller.selectedCategorySlug;
-          final icon = _categoryIcon(item);
+          final iconAsset = _categoryIconAsset(item);
 
           final labelColor = selected
               ? AppColors.onPrimaryContainer
@@ -410,7 +411,12 @@ class _ShopPageState extends State<ShopPage> {
             label: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: labelColor),
+                SvgPicture.asset(
+                  iconAsset,
+                  width: 16,
+                  height: 16,
+                  colorFilter: ColorFilter.mode(labelColor, BlendMode.srcIn),
+                ),
                 const SizedBox(width: 6),
                 Text(_getCategoryDisplayName(item).toUpperCase()),
               ],
@@ -463,41 +469,118 @@ class _ShopPageState extends State<ShopPage> {
     }
   }
 
-  IconData _categoryIcon(CategoryEntity category) {
+  String _categoryIconAsset(CategoryEntity category) {
     final slug = category.slug.toLowerCase();
     final name = category.name.toLowerCase();
 
-    if (slug == 'all' || name.contains('tất cả')) {
-      return Icons.apps_rounded;
+    // Tất cả sản phẩm
+    if (slug == 'all' || name.contains('tất cả') || name.contains('tat ca')) {
+      return 'assets/icons/categories/all.svg';
     }
-    if (slug.contains('vot') || name.contains('vợt')) {
-      return Icons.sports_tennis_rounded;
+    
+    // Vợt cầu lông
+    if (slug.contains('vot') ||
+        slug.contains('racket') ||
+        name.contains('vợt cầu lông') ||
+        name.contains('vot cau long') ||
+        name.contains('vợt')) {
+      return 'assets/icons/categories/vot.svg';
     }
-    if (slug.contains('giay') || name.contains('giày')) {
-      return Icons.directions_run_rounded;
+    
+    // Giày cầu lông
+    if (slug.contains('shoe') ||
+        slug.contains('giay') ||
+        name.contains('giày cầu lông') ||
+        name.contains('giay cau long') ||
+        name.contains('giày')) {
+      return 'assets/icons/categories/giay.svg';
     }
-    if (slug.contains('balo') || name.contains('balo')) {
-      return Icons.backpack_rounded;
+    
+    // Túi và bao vợt (ưu tiên trước balo)
+    if (slug.contains('tui') ||
+        slug.contains('bag') ||
+        name.contains('túi & bao vợt') ||
+        name.contains('tui & bao vot') ||
+        name.contains('túi') ||
+        name.contains('bao vợt') ||
+        name.contains('bao') ||
+        slug.contains('case')) {
+      return 'assets/icons/categories/tui_bao_vot.svg';
     }
-    if (slug.contains('tui') || name.contains('túi')) {
-      return Icons.work_rounded;
+    
+    // Ba lô cầu lông
+    if (slug.contains('balo') ||
+        slug.contains('backpack') ||
+        name.contains('ba lô cầu lông') ||
+        name.contains('ba lo cau long') ||
+        name.contains('ba lô') ||
+        name.contains('balo')) {
+      return 'assets/icons/categories/balo.svg';
     }
+    
+    // Quả cầu lông (shuttlecock) - ưu tiên trước "cầu" chung
+    if (name.contains('quả cầu lông') ||
+        name.contains('qua cau long') ||
+        name.contains('quả cầu') ||
+        name.contains('qua cau') ||
+        slug.contains('shuttle') ||
+        name.contains('shuttlecock') ||
+        name.contains('quả') ||
+        slug.contains('ball')) {
+      return 'assets/icons/categories/cau_long.svg';
+    }
+    
+    // Cầu lông chung (nếu không phải quả cầu)
     if (slug.contains('cau') || name.contains('cầu')) {
-      return Icons.sports_rounded;
+      return 'assets/icons/categories/cau_long.svg';
     }
-    if (slug.contains('cuoc') || name.contains('cước')) {
-      return Icons.linear_scale_rounded;
+    
+    // Phụ kiện cầu lông
+    if (slug.contains('access') ||
+        slug.contains('phu-kien') ||
+        name.contains('phụ kiện cầu lông') ||
+        name.contains('phu kien cau long') ||
+        name.contains('phụ kiện') ||
+        slug.contains('grip') ||
+        name.contains('grip') ||
+        slug.contains('overgrip') ||
+        name.contains('băng quấn') ||
+        name.contains('bang quan') ||
+        name.contains('dây đeo') ||
+        name.contains('day deo')) {
+      return 'assets/icons/categories/phu_kien.svg';
     }
-    if (slug.contains('ao') || name.contains('áo')) {
-      return Icons.checkroom_rounded;
+    
+    // Quần áo cầu lông
+    if (slug.contains('shirt') ||
+        slug.contains('ao') ||
+        name.contains('quần áo cầu lông') ||
+        name.contains('quan ao cau long') ||
+        name.contains('áo') ||
+        slug.contains('jersey') ||
+        name.contains('jersey')) {
+      return 'assets/icons/categories/ao.svg';
     }
-    if (slug.contains('quan') || name.contains('quần')) {
-      return Icons.accessibility_new_rounded;
+    
+    // Quần thể thao
+    if (slug.contains('quan') || slug.contains('short') || name.contains('quần') || 
+        name.contains('short')) {
+      return 'assets/icons/categories/ao.svg';
     }
-    if (slug.contains('khac') || name.contains('khác')) {
-      return Icons.category_rounded;
+    
+    // Cước vợt (strings)
+    if (slug.contains('cuoc') || slug.contains('string') || name.contains('cước') ||
+        name.contains('dây vợt') || name.contains('day vot')) {
+      return 'assets/icons/categories/phu_kien.svg';
     }
-    return Icons.sell_rounded;
+    
+    // Khác
+    if (slug.contains('khac') || name.contains('khác') || slug.contains('other')) {
+      return 'assets/icons/categories/all.svg';
+    }
+    
+    // Mặc định
+    return 'assets/icons/categories/all.svg';
   }
 
   Widget _buildResultHeader(BuildContext context) {

@@ -24,6 +24,15 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
+  Future<void> createReturnRequest(
+    String token,
+    String orderCode,
+    Map<String, dynamic> payload,
+  ) {
+    return _remote.createReturnRequest(token, orderCode, payload);
+  }
+
+  @override
   Future<OrderPreviewResponse> previewOrder(
     String token,
     CreateOrderRequest request,

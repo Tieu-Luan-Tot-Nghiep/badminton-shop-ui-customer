@@ -61,6 +61,24 @@ class OrderController extends ChangeNotifier {
     }
   }
 
+  Future<bool> createReturnRequest(
+    String orderCode,
+    Map<String, dynamic> payload,
+  ) async {
+    final token = _token;
+    if (token == null || token.isEmpty) return false;
+
+    try {
+      await _repository.createReturnRequest(token, orderCode, payload);
+      await loadOrders();
+      return true;
+    } catch (e) {
+      _errorMessage = _toReadablePlaceError(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<OrderPreviewResponse?> previewOrder(CreateOrderRequest request) async {
     final token = _token;
     if (token == null) return null;

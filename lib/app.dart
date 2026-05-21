@@ -22,6 +22,7 @@ import 'data/repositories/order_repository_impl.dart';
 import 'domain/usecases/get_home_data_usecase.dart';
 import 'core/network/api_client.dart';
 import 'presentation/manager/auth_controller.dart';
+import 'presentation/manager/chatbot_controller.dart';
 import 'presentation/manager/home_controller.dart';
 import 'presentation/manager/chat_controller.dart';
 import 'presentation/manager/address_controller.dart';
@@ -35,6 +36,7 @@ import 'presentation/pages/profile_page.dart';
 import 'presentation/pages/register_page.dart';
 import 'presentation/pages/reviews_page.dart';
 import 'presentation/pages/product_detail_page.dart';
+import 'presentation/pages/chatbot_page.dart';
 import 'presentation/pages/scan_page.dart';
 import 'presentation/pages/cart_page.dart';
 import 'presentation/pages/shop_page.dart';
@@ -63,6 +65,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
   late final HomeController _homeController;
   late final AuthController _authController;
   late final ChatController _chatController;
+  late final ChatbotController _chatbotController;
   late final AddressController _addressController;
   late final OrderController _orderController;
   late final CartRemoteDataSource _cartRemote;
@@ -103,6 +106,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
     _chatController.addListener(() {
       _chatCount.value = _chatController.unreadCount;
     });
+    _chatbotController = ChatbotController(_authController);
 
     final addressRemote = AddressRemoteDataSource();
     final addressRepository = AddressRepositoryImpl(addressRemote);
@@ -246,6 +250,12 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
       AdminSystemPage(
         authController: _authController,
         dataSource: _adminRemote,
+        onNavigateToAdminTab: (index) {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _adminSelectedIndex = index);
+        },
       ),
     ];
   }
@@ -431,7 +441,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
       await _authController.restoreSession();
       if (!_authController.isAuthenticated) return;
     }
-    _navigatorKey.currentState?.pushNamed('/chat');
+    _navigatorKey.currentState?.pushNamed('/chatbot');
   }
 
   Widget _buildBlockedForAdminPage(String routeName) {
@@ -472,6 +482,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
       '/verify-email',
       '/forgot-password',
       '/chat',
+      '/chatbot',
     };
 
     if (_isAdminMode && blockedInAdmin.contains(routeName)) {
@@ -551,6 +562,11 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
         return MaterialPageRoute(
           settings: settings,
           builder: (context) => ChatPage(controller: _chatController),
+        );
+      case '/chatbot':
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (context) => ChatbotPage(controller: _chatbotController),
         );
       default:
         return null;

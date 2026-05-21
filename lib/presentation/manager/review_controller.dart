@@ -82,4 +82,22 @@ class ReviewController extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> createReview(
+    int orderItemId,
+    double rating,
+    String comment,
+  ) async {
+    final token = _authController.session?.token;
+    if (token == null || token.isEmpty) return false;
+
+    try {
+      await _repository.createReview(token, orderItemId, rating, comment);
+      return true;
+    } catch (e) {
+      error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
 }

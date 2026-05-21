@@ -8,6 +8,11 @@ abstract class OrderRepository {
     int size = 10,
   });
   Future<void> cancelOrder(String token, String orderCode, String reason);
+  Future<void> createReturnRequest(
+    String token,
+    String orderCode,
+    Map<String, dynamic> payload,
+  );
   Future<OrderPreviewResponse> previewOrder(
     String token,
     CreateOrderRequest request,

@@ -32,7 +32,7 @@ class OrderModel {
 
     return OrderModel(
       orderCode: '${json['orderCode'] ?? ''}',
-      orderStatus: '${json['orderStatus'] ?? ''}',
+      orderStatus: '${json['orderStatus'] ?? json['status'] ?? ''}',
       paymentStatus: '${json['paymentStatus'] ?? ''}',
       paymentMethod: '${json['paymentMethod'] ?? ''}',
       totalAmount: _toDouble(json['totalAmount'] ?? 0),
@@ -89,8 +89,19 @@ class OrderItemModel {
   final int quantity;
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    final nestedOrderItem = json['orderItem'];
+    final nestedMap = nestedOrderItem is Map<String, dynamic>
+        ? nestedOrderItem
+        : const <String, dynamic>{};
+
     return OrderItemModel(
-      id: _toInt(json['id']),
+      id: _toInt(
+        json['orderItemId'] ??
+            json['id'] ??
+            json['itemId'] ??
+            nestedMap['id'] ??
+            nestedMap['orderItemId'],
+      ),
       productName: '${json['productName'] ?? ''}',
       variantName: '${json['variantName'] ?? ''}',
       thumbnailUrl: '${json['thumbnailUrl'] ?? json['imageUrl'] ?? ''}',

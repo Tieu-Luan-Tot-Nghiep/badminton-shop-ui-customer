@@ -15,6 +15,7 @@ import '../widgets/cart_icon_bubble.dart';
 import '../widgets/chat_icon_bubble.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/product_card.dart';
+import 'membership_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -210,7 +211,11 @@ class _HomePageState extends State<HomePage> {
               ? NetworkImage(widget.authController.userProfile!.avatar!)
               : null,
           child: widget.authController.userProfile?.avatar == null
-              ? const Icon(Icons.person_rounded, color: AppColors.textSecondary, size: 20)
+              ? const Icon(
+                  Icons.person_rounded,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                )
               : null,
         ),
       ],
@@ -232,7 +237,8 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             child: TextField(
               onSubmitted: (value) {
-                if (value.trim().isNotEmpty && widget.onSearchSubmitted != null) {
+                if (value.trim().isNotEmpty &&
+                    widget.onSearchSubmitted != null) {
                   widget.onSearchSubmitted!(value.trim());
                 }
               },
@@ -244,7 +250,10 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          const Icon(Icons.keyboard_voice_outlined, color: AppColors.textSecondary),
+          const Icon(
+            Icons.keyboard_voice_outlined,
+            color: AppColors.textSecondary,
+          ),
         ],
       ),
     );
@@ -392,8 +401,8 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final item = data[index];
           return CategoryChip(
-            label: item.name, 
-            icon: _categoryIcon(item),
+            label: item.name,
+            iconAsset: _categoryIconAsset(item),
             onTap: () {
               if (widget.onCategorySelected != null) {
                 widget.onCategorySelected!(item);
@@ -426,7 +435,7 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           final product = products[index];
           return ProductCard(
-            product: product, 
+            product: product,
             badge: badge,
             onTap: () {
               if (widget.onProductSelected != null) {
@@ -439,45 +448,125 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
-
-  IconData _categoryIcon(CategoryEntity category) {
+  String _categoryIconAsset(CategoryEntity category) {
     final slug = category.slug.toLowerCase();
     final name = category.name.toLowerCase();
 
-    if (slug.contains('vot') || name.contains('vợt')) {
-      return Icons.sports_tennis_rounded;
+    // Tất cả sản phẩm
+    if (slug == 'all' || name.contains('tất cả') || name.contains('tat ca')) {
+      return 'assets/icons/categories/all.svg';
     }
+
+    // Vợt cầu lông
+    if (slug.contains('vot') ||
+        slug.contains('racket') ||
+        name.contains('vợt cầu lông') ||
+        name.contains('vot cau long') ||
+        name.contains('vợt')) {
+      return 'assets/icons/categories/vot.svg';
+    }
+
+    // Giày cầu lông
     if (slug.contains('shoe') ||
         slug.contains('giay') ||
+        name.contains('giày cầu lông') ||
+        name.contains('giay cau long') ||
         name.contains('giày')) {
-      return Icons.directions_run_rounded;
+      return 'assets/icons/categories/giay.svg';
     }
-    if (slug.contains('balo') || name.contains('balo')) {
-      return Icons.backpack_rounded;
+
+    // Túi và bao vợt (ưu tiên trước balo)
+    if (slug.contains('tui') ||
+        slug.contains('bag') ||
+        name.contains('túi & bao vợt') ||
+        name.contains('túi & bao vợt') ||
+        name.contains('túi') ||
+        name.contains('bao vợt') ||
+        name.contains('bao') ||
+        slug.contains('case')) {
+      return 'assets/icons/categories/tui_bao_vot.svg';
     }
-    if (slug.contains('tui') || name.contains('túi')) {
-      return Icons.work_rounded;
+
+    // Ba lô cầu lông
+    if (slug.contains('balo') ||
+        slug.contains('backpack') ||
+        name.contains('ba lô cầu lông') ||
+        name.contains('ba lo cau long') ||
+        name.contains('ba lô') ||
+        name.contains('balo')) {
+      return 'assets/icons/categories/balo.svg';
     }
+
+    // Quả cầu lông (shuttlecock) - ưu tiên trước "cầu" chung
+    if (name.contains('quả cầu lông') ||
+        name.contains('qua cau long') ||
+        name.contains('quả cầu') ||
+        name.contains('qua cau') ||
+        slug.contains('shuttle') ||
+        name.contains('shuttlecock') ||
+        name.contains('quả') ||
+        slug.contains('ball')) {
+      return 'assets/icons/categories/cau_long.svg';
+    }
+
+    // Cầu lông chung (nếu không phải quả cầu)
     if (slug.contains('cau') || name.contains('cầu')) {
-      return Icons.sports_rounded;
+      return 'assets/icons/categories/cau_long.svg';
     }
-    if (slug.contains('cuoc') || name.contains('cước')) {
-      return Icons.linear_scale_rounded;
+
+    // Phụ kiện cầu lông
+    if (slug.contains('access') ||
+        slug.contains('phu-kien') ||
+        name.contains('phụ kiện cầu lông') ||
+        name.contains('phu kien cau long') ||
+        name.contains('phụ kiện') ||
+        slug.contains('grip') ||
+        name.contains('grip') ||
+        slug.contains('overgrip') ||
+        name.contains('băng quấn') ||
+        name.contains('bang quan') ||
+        name.contains('dây đeo') ||
+        name.contains('day deo')) {
+      return 'assets/icons/categories/phu_kien.svg';
     }
-    if (slug.contains('shirt') || slug.contains('ao') || name.contains('áo')) {
-      return Icons.checkroom_rounded;
+
+    // Quần áo cầu lông
+    if (slug.contains('shirt') ||
+        slug.contains('ao') ||
+        name.contains('quần áo cầu lông') ||
+        name.contains('quan ao cau long') ||
+        name.contains('áo') ||
+        slug.contains('jersey') ||
+        name.contains('jersey')) {
+      return 'assets/icons/categories/ao.svg';
     }
-    if (slug.contains('quan') || name.contains('quần')) {
-      return Icons.accessibility_new_rounded;
+
+    // Quần thể thao
+    if (slug.contains('quan') ||
+        slug.contains('short') ||
+        name.contains('quần') ||
+        name.contains('short')) {
+      return 'assets/icons/categories/ao.svg';
     }
-    if (slug.contains('khac') || name.contains('khác')) {
-      return Icons.category_rounded;
+
+    // Cước vợt (strings)
+    if (slug.contains('cuoc') ||
+        slug.contains('string') ||
+        name.contains('cước') ||
+        name.contains('dây vợt') ||
+        name.contains('day vot')) {
+      return 'assets/icons/categories/phu_kien.svg';
     }
-    if (slug.contains('access') || slug.contains('phu-kien')) {
-      return Icons.sports_handball_rounded;
+
+    // Khác
+    if (slug.contains('khac') ||
+        name.contains('khác') ||
+        slug.contains('other')) {
+      return 'assets/icons/categories/all.svg';
     }
-    return Icons.sell_rounded;
+
+    // Mặc định
+    return 'assets/icons/categories/all.svg';
   }
 
   Widget _buildPromotionsList(List<PromotionEntity> promotions) {
@@ -563,7 +652,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBrandShowcase(BuildContext context) {
     return Container(
-      height: 120,
+      height: 100,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -577,25 +666,28 @@ class _HomePageState extends State<HomePage> {
           Expanded(
             flex: 2,
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'THƯƠNG HIỆU',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Colors.white70,
                       fontWeight: FontWeight.w800,
+                      fontSize: 10,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'YONEX • VICTOR\nLI-NING • MIZUNO',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
-                      height: 1.2,
+                      height: 1.1,
+                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -612,7 +704,7 @@ class _HomePageState extends State<HomePage> {
               ),
               child: const Icon(
                 Icons.sports_tennis_rounded,
-                size: 60,
+                size: 48,
                 color: Colors.white38,
               ),
             ),
@@ -624,7 +716,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildFlashSale(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -634,7 +726,7 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
@@ -642,42 +734,46 @@ class _HomePageState extends State<HomePage> {
             child: const Icon(
               Icons.flash_on_rounded,
               color: Colors.white,
-              size: 24,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'FLASH SALE',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   'Giảm đến 50% - Chỉ hôm nay!',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white70,
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               'MUA NGAY',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: const Color(0xFFFF6B35),
                 fontWeight: FontWeight.w800,
+                fontSize: 11,
               ),
             ),
           ),
@@ -687,72 +783,90 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMembershipBanner(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MembershipPage(
+              authController: widget.authController,
+              onNavigateToHome: widget.onNavigateToHome,
+            ),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    'VIP MEMBER',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'VIP MEMBER',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'THAM GIA NGAY\nĐỂ NHẬN ƯU ĐÃI',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    height: 1.2,
+                  const SizedBox(height: 8),
+                  Text(
+                    'THAM GIA NGAY\nĐỂ NHẬN ƯU ĐÃI',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '• Miễn phí vận chuyển\n• Giảm giá độc quyền\n• Tích điểm thưởng',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                    height: 1.4,
+                  const SizedBox(height: 6),
+                  Text(
+                    '• Miễn phí ship • Giảm giá VIP • Tích điểm',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              shape: BoxShape.circle,
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.card_membership_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
-            child: const Icon(
-              Icons.card_membership_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-

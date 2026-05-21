@@ -38,6 +38,18 @@ class OrderRemoteDataSource {
     );
   }
 
+  Future<void> createReturnRequest(
+    String token,
+    String orderCode,
+    Map<String, dynamic> payload,
+  ) async {
+    await _dio.post(
+      '/api/orders/$orderCode/returns',
+      data: payload,
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
+
   Future<OrderPreviewResponse> previewOrder(
     String token,
     CreateOrderRequest request,
@@ -91,12 +103,14 @@ class OrderRemoteDataSource {
   }
 
   List<Map<String, dynamic>>? _extractContent(dynamic payload) {
-    if (payload is List)
+    if (payload is List) {
       return payload.whereType<Map<String, dynamic>>().toList();
+    }
     if (payload is Map<String, dynamic>) {
       final content = payload['content'] ?? payload['items'] ?? payload['data'];
-      if (content is List)
+      if (content is List) {
         return content.whereType<Map<String, dynamic>>().toList();
+      }
     }
     return null;
   }

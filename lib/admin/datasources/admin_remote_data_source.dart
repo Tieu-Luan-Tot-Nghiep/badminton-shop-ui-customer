@@ -189,6 +189,62 @@ class AdminRemoteDataSource {
     return _extractMap(response.data);
   }
 
+  Future<Map<String, dynamic>> approveReturn(
+    String token,
+    String returnRequestId, {
+    String? note,
+  }) async {
+    final response = await _dio.post(
+      '/api/admin/returns/$returnRequestId/approve',
+      options: _auth(token),
+      queryParameters: {
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> rejectReturn(
+    String token,
+    String returnRequestId, {
+    required String note,
+  }) async {
+    final response = await _dio.post(
+      '/api/admin/returns/$returnRequestId/reject',
+      options: _auth(token),
+      queryParameters: {'note': note.trim()},
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> receiveReturn(
+    String token,
+    String returnRequestId,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.post(
+      '/api/admin/returns/$returnRequestId/receive',
+      options: _auth(token),
+      data: payload,
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> refundReturn(
+    String token,
+    String returnRequestId, {
+    String? note,
+  }) async {
+    final response = await _dio.post(
+      '/api/admin/returns/$returnRequestId/refund',
+      options: _auth(token),
+      queryParameters: {
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      },
+    );
+    return _extractMap(response.data);
+  }
+
   Future<AdminPageResult> getUsers(
     String token, {
     int page = 0,
@@ -211,6 +267,59 @@ class AdminRemoteDataSource {
     return _extractPage(response.data);
   }
 
+  Future<Map<String, dynamic>> getUserDetail(
+    String token,
+    String userId,
+  ) async {
+    final response = await _dio.get(
+      '/api/users/admin/$userId',
+      options: _auth(token),
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> createUser(
+    String token,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.post(
+      '/api/users/admin',
+      options: _auth(token),
+      data: payload,
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> updateUser(
+    String token,
+    String userId,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.put(
+      '/api/users/admin/$userId',
+      options: _auth(token),
+      data: payload,
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<void> deleteUser(String token, String userId) async {
+    await _dio.delete('/api/users/admin/$userId', options: _auth(token));
+  }
+
+  Future<Map<String, dynamic>> updateUserStatus(
+    String token,
+    String userId, {
+    required bool active,
+  }) async {
+    final response = await _dio.patch(
+      '/api/users/admin/$userId/status',
+      options: _auth(token),
+      queryParameters: {'active': active},
+    );
+    return _extractMap(response.data);
+  }
+
   Future<AdminPageResult> getPromotions(
     String token, {
     int page = 0,
@@ -227,6 +336,51 @@ class AdminRemoteDataSource {
       },
     );
     return _extractPage(response.data);
+  }
+
+  Future<Map<String, dynamic>> createPromotion(
+    String token,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.post(
+      '/api/promotions',
+      options: _auth(token),
+      data: payload,
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> updatePromotion(
+    String token,
+    String promotionId,
+    Map<String, dynamic> payload,
+  ) async {
+    final response = await _dio.put(
+      '/api/promotions/$promotionId',
+      options: _auth(token),
+      data: payload,
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> updatePromotionActive(
+    String token,
+    String promotionId, {
+    required bool active,
+  }) async {
+    final response = await _dio.patch(
+      '/api/promotions/$promotionId/active',
+      options: _auth(token),
+      queryParameters: {'active': active},
+    );
+    return _extractMap(response.data);
+  }
+
+  Future<void> deletePromotion(String token, String promotionId) async {
+    await _dio.delete(
+      '/api/promotions/admin/$promotionId',
+      options: _auth(token),
+    );
   }
 
   Future<List<Map<String, dynamic>>> getLowStock(
@@ -273,7 +427,9 @@ class AdminRemoteDataSource {
     String? sortDir,
   }) async {
     final hasKeyword = keyword != null && keyword.trim().isNotEmpty;
-    final endpoint = hasKeyword ? '/api/search/products' : '/api/products/admin';
+    final endpoint = hasKeyword
+        ? '/api/search/products'
+        : '/api/products/admin';
     final queryParams = <String, dynamic>{
       'page': page,
       'size': size,
@@ -300,7 +456,7 @@ class AdminRemoteDataSource {
       options: _auth(token),
       queryParameters: queryParams,
     );
-    
+
     // DEBUG LOG
     // ignore: avoid_print
     print('>>> API SEARCH RAW RESPONSE is list: ${response.data is List}');
@@ -473,19 +629,24 @@ class AdminRemoteDataSource {
     final content = map['content'] ?? map['items'] ?? map['data'];
 
     final list = (content is List)
-        ? content.map((e) {
-            if (e is Map) {
-              return Map<String, dynamic>.from(e);
-            }
-            return <String, dynamic>{};
-          }).where((e) => e.isNotEmpty).toList()
+        ? content
+              .map((e) {
+                if (e is Map) {
+                  return Map<String, dynamic>.from(e);
+                }
+                return <String, dynamic>{};
+              })
+              .where((e) => e.isNotEmpty)
+              .toList()
         : <Map<String, dynamic>>[];
 
     return AdminPageResult(
       items: list,
       page: _toInt(map['number'] ?? map['page'] ?? map['currentPage'] ?? 0),
       size: _toInt(map['size'] ?? 20),
-      totalElements: _toInt(map['totalElements'] ?? map['totalItems'] ?? map['total']),
+      totalElements: _toInt(
+        map['totalElements'] ?? map['totalItems'] ?? map['total'],
+      ),
       totalPages: _toInt(map['totalPages'] ?? map['pageCount']),
     );
   }

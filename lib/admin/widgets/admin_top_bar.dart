@@ -8,11 +8,13 @@ class AdminTopBar extends StatelessWidget {
     required this.title,
     required this.role,
     this.onLogout,
+    this.actions,
   });
 
   final String title;
   final String role;
   final VoidCallback? onLogout;
+  final List<Widget>? actions;
 
   Future<void> _confirmLogout(BuildContext context) async {
     if (onLogout == null) {
@@ -109,6 +111,7 @@ class AdminTopBar extends StatelessWidget {
                 ],
               ),
             ),
+            if (actions != null) ...actions!,
             IconButton(
               onPressed: () => _confirmLogout(context),
               icon: const Icon(

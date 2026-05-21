@@ -26,7 +26,7 @@ class ChatIconBubble extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.chat_bubble_outline_rounded,
+                Icons.smart_toy_rounded,
                 size: 18,
                 color: AppColors.textPrimary,
               ),

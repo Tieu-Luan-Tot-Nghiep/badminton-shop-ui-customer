@@ -265,6 +265,23 @@ Field trong `ReturnRequestResponse`:
 
 ## 6. Quan ly User Admin APIs
 
+### 6.0 Tao user moi
+
+- `POST /api/users/admin`
+- Body `AdminCreateUserRequest`
+
+```json
+{
+  "username": "staff01",
+  "email": "staff01@example.com",
+  "password": "password123",
+  "fullName": "Staff One",
+  "phoneNumber": "0123456789",
+  "role": "CUSTOMER",
+  "isActive": true
+}
+```
+
 ### 6.1 Lay danh sach user
 
 - `GET /api/users/admin`
@@ -381,6 +398,63 @@ Variants:
 - `POST /api/products/{productId}/variants`
 - `POST /api/products/{productId}/variants/bulk`
 - `PUT /api/products/{productId}/variants/{variantId}`
+
+---
+
+## 9. Quan ly Ton kho (Inventory) Admin APIs
+
+### 9.1 Lay danh sach san pham keo theo cac bien the va so luong
+
+- `GET /api/inventory/admin/products`
+- Auth: Bearer JWT (role `ADMIN`)
+- Mota: Tra ve danh sach product (root) va cac variants kem so luong hien tai (`stock`). Kieu tra ve la mot mang, sap xep theo `totalQuantity` tang dan (tu nho -> lon).
+- Query params: (khong co)
+
+Response `data`: `AdminInventoryProductResponse[]`
+
+`AdminInventoryProductResponse` structure:
+
+```json
+[
+  {
+    "id": 123,
+    "name": "Vot Yonex ASTROX 99",
+    "totalQuantity": 12,
+    "variants": [
+      { "id": 1001, "name": "4U - Red", "quantity": 5 },
+      { "id": 1002, "name": "4U - Blue", "quantity": 7 }
+    ]
+  },
+  {
+    "id": 124,
+    "name": "Vot Yonex NANOFORCE",
+    "totalQuantity": 20,
+    "variants": [
+      { "id": 1010, "name": "G4 - Black", "quantity": 20 }
+    ]
+  }
+]
+```
+
+Envelope example (200):
+
+```json
+{
+  "message": "Get inventory successful",
+  "status": "success",
+  "statusCode": 200,
+  "data": [ /* array as above */ ]
+}
+```
+
+Error responses:
+
+- `401 Unauthorized` — missing/invalid token
+- `403 Forbidden` — token valid but not an ADMIN
+
+Notes:
+- `quantity` is taken from `product_variants.stock` by default. If you need the quantity computed from inventory transactions, ask and we can provide an aggregated endpoint.
+
 - `DELETE /api/products/{productId}/variants/{variantId}`
 
 Images:
