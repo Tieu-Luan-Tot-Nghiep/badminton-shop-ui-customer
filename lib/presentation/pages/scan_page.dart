@@ -5,7 +5,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -23,6 +22,7 @@ class ScanPage extends StatefulWidget {
     this.chatCountListenable,
     this.onOpenCart,
     this.onOpenChat,
+    this.onOpenShopChat,
     this.onSearchResult,
     this.onNavigateToHome,
   });
@@ -32,6 +32,7 @@ class ScanPage extends StatefulWidget {
   final ValueListenable<int>? chatCountListenable;
   final VoidCallback? onOpenCart;
   final VoidCallback? onOpenChat;
+  final VoidCallback? onOpenShopChat;
   final ValueChanged<ScanSearchPayload>? onSearchResult;
   final VoidCallback? onNavigateToHome;
 
@@ -173,11 +174,21 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
           ValueListenableBuilder<int>(
             valueListenable: widget.chatCountListenable!,
             builder: (_, count, __) {
-              return ChatIconBubble(count: count, onTap: widget.onOpenChat);
+              return ChatIconBubble(
+                count: count,
+                onTap: widget.onOpenShopChat,
+                icon: Icons.chat_rounded,
+              );
             },
           )
         else
-          ChatIconBubble(count: 0, onTap: widget.onOpenChat),
+          ChatIconBubble(
+            count: 0,
+            onTap: widget.onOpenShopChat,
+            icon: Icons.chat_rounded,
+          ),
+        const SizedBox(width: 6),
+        ChatIconBubble(count: 0, onTap: widget.onOpenChat),
         const SizedBox(width: 10),
         ValueListenableBuilder<int>(
           valueListenable: widget.cartCountListenable,
@@ -227,13 +238,14 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
             ),
           ),
         ),
-        Text(
-          action,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.primaryContainer,
-            fontSize: 16,
+        if (action.isNotEmpty)
+          Text(
+            action,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppColors.primaryContainer,
+              fontSize: 16,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -427,12 +439,12 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         : AppColors.textPrimary;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Container(
-        height: 88,
+        height: 64,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           color: highlighted
               ? AppColors.primaryContainer
               : AppColors.surfaceContainerLow,
@@ -601,20 +613,16 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     try {
       await widget.authController.restoreSession();
       final token = widget.authController.session?.token;
-      final croppedPath = await _cropCenterRegion(path);
       if (kDebugMode) {
         final sourceFile = File(path);
-        final croppedFile = File(croppedPath);
         debugPrint(
           '[ImageSearch][INPUT] original=$path '
           'originalBytes=${sourceFile.existsSync() ? sourceFile.lengthSync() : -1} '
-          'cropped=$croppedPath '
-          'croppedBytes=${croppedFile.existsSync() ? croppedFile.lengthSync() : -1} '
           'hasToken=${token != null && token.isNotEmpty}',
         );
       }
       final page = await _remote.searchProductsByImage(
-        imagePath: croppedPath,
+        imagePath: path,
         accessToken: token,
       );
       if (!mounted) {
@@ -709,49 +717,6 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         ..showSnackBar(
           const SnackBar(content: Text('Thiết bị không hỗ trợ flash.')),
         );
-    }
-  }
-
-  Future<String> _cropCenterRegion(String sourcePath) async {
-    final input = File(sourcePath);
-    if (!await input.exists()) {
-      return sourcePath;
-    }
-
-    try {
-      final bytes = await input.readAsBytes();
-      final decoded = img.decodeImage(bytes);
-      if (decoded == null) {
-        return sourcePath;
-      }
-
-      final oriented = img.bakeOrientation(decoded);
-      final cropWidth = (oriented.width * 0.88).round().clamp(
-        1,
-        oriented.width,
-      );
-      final cropHeight = (oriented.height * 0.90).round().clamp(
-        1,
-        oriented.height,
-      );
-      final cropX = ((oriented.width - cropWidth) / 2).round();
-      final cropY = ((oriented.height - cropHeight) / 2).round();
-
-      final cropped = img.copyCrop(
-        oriented,
-        x: cropX,
-        y: cropY,
-        width: cropWidth,
-        height: cropHeight,
-      );
-
-      final target = File(
-        '${Directory.systemTemp.path}/scan_center_${DateTime.now().microsecondsSinceEpoch}.jpg',
-      );
-      await target.writeAsBytes(img.encodeJpg(cropped, quality: 92));
-      return target.path;
-    } catch (_) {
-      return sourcePath;
     }
   }
 

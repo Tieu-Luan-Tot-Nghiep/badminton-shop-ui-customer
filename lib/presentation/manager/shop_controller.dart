@@ -178,9 +178,33 @@ class ShopController extends ChangeNotifier {
     _page = 0;
     hasMore = false;
     syncWarning = scanProducts.isEmpty
-        ? 'Khong tim thay san pham phu hop tu hinh anh da chon.'
-        : 'Dang hien thi ket qua tim kiem bang hinh anh.';
+        ? 'Không tìm thấy sản phẩm phù hợp từ hình ảnh đã chọn.'
+        : null;
     notifyListeners();
+    
+    if (categories.isEmpty) {
+      _loadCategoriesOnly();
+    }
+  }
+
+  Future<void> _loadCategoriesOnly() async {
+    try {
+      final cachedCategories = await _local.getCachedCategories();
+      if (cachedCategories.isNotEmpty) {
+        categories = [
+          const CategoryEntity(id: 'all', name: 'TAT CA', slug: 'all'),
+          ...cachedCategories.map((e) => e.toEntity()),
+        ];
+        notifyListeners();
+      }
+      
+      final remoteCategories = await _remote.getAllCategories();
+      categories = [
+        const CategoryEntity(id: 'all', name: 'TAT CA', slug: 'all'),
+        ...remoteCategories.map((e) => e.toEntity()),
+      ];
+      notifyListeners();
+    } catch (_) {}
   }
 
   Future<void> selectCategory(String slug) async {

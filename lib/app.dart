@@ -131,7 +131,10 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
         chatCountListenable: _chatCount,
         onOpenCart: _openCartFromTopBar,
         onOpenChat: _openChatFromTopBar,
+        onOpenShopChat: _openShopChatFromTopBar,
         onCategorySelected: (category) {
+          _scanSearchResult.value = null;
+          _searchKeyword.value = null;
           _selectedCategorySlug.value = category.slug;
           if (!mounted) {
             return;
@@ -139,6 +142,8 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
           setState(() => _selectedIndex = 1);
         },
         onSearchSubmitted: (keyword) {
+          _scanSearchResult.value = null;
+          _selectedCategorySlug.value = 'all';
           _searchKeyword.value = keyword;
           if (!mounted) {
             return;
@@ -161,7 +166,10 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
                 addressController: _addressController,
                 orderController: _orderController,
                 cartCountListenable: _cartCount,
+                chatCountListenable: _chatCount,
                 onOpenCart: _openCartFromTopBar,
+                onOpenChat: _openChatFromTopBar,
+                onOpenShopChat: _openShopChatFromTopBar,
                 onRequireLogin: () {
                   navigator.pushNamed('/login');
                 },
@@ -181,6 +189,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
         searchKeywordListenable: _searchKeyword,
         onOpenCart: _openCartFromTopBar,
         onOpenChat: _openChatFromTopBar,
+        onOpenShopChat: _openShopChatFromTopBar,
         onNavigateToHome: _navigateToHome,
         onRequireLogin: () {
           _navigatorKey.currentState?.pushNamed('/login');
@@ -193,8 +202,11 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
         chatCountListenable: _chatCount,
         onOpenCart: _openCartFromTopBar,
         onOpenChat: _openChatFromTopBar,
+        onOpenShopChat: _openShopChatFromTopBar,
         onNavigateToHome: _navigateToHome,
         onSearchResult: (payload) {
+          _searchKeyword.value = null;
+          _selectedCategorySlug.value = 'all';
           _scanSearchResult.value = payload;
           if (!mounted) {
             return;
@@ -208,6 +220,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
         chatCountListenable: _chatCount,
         onOpenCart: _openCartFromTopBar,
         onOpenChat: _openChatFromTopBar,
+        onOpenShopChat: _openShopChatFromTopBar,
         onNavigateToHome: _navigateToHome,
       ),
       ProfilePage(
@@ -218,6 +231,7 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
         chatCountListenable: _chatCount,
         onOpenCart: _openCartFromTopBar,
         onOpenChat: _openChatFromTopBar,
+        onOpenShopChat: _openShopChatFromTopBar,
         onNavigateToHome: _navigateToHome,
         onLoggedOut: () {
           if (!mounted) {
@@ -442,6 +456,17 @@ class _BadmintonShopAppState extends State<BadmintonShopApp> {
       if (!_authController.isAuthenticated) return;
     }
     _navigatorKey.currentState?.pushNamed('/chatbot');
+  }
+
+  Future<void> _openShopChatFromTopBar() async {
+    if (_isAdminMode) return;
+    await _authController.restoreSession();
+    if (!_authController.isAuthenticated) {
+      await _navigatorKey.currentState?.pushNamed('/login');
+      await _authController.restoreSession();
+      if (!_authController.isAuthenticated) return;
+    }
+    _navigatorKey.currentState?.pushNamed('/chat');
   }
 
   Widget _buildBlockedForAdminPage(String routeName) {

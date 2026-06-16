@@ -1,10 +1,10 @@
 ### 2.0. Search Products (Elasticsearch)
 - **URL**: `/api/search/products`
 - **Method**: `GET`
-- **Description**: Tìm kiếm sản phẩm qua chỉ mục Elasticsearch (full-text + filter + sort + phân trang).
+- **Description**: Tìm kiếm sản phẩm qua chỉ mục Elasticsearch (full-text + filter + sort + phân trang). **Tên sản phẩm được ưu tiên cao nhất** trong kết quả tìm kiếm với nhiều chiến lược matching.
 - **Authentication**: Không yêu cầu.
 - **Query Parameters**:
-  - `keyword` (String, optional) — tìm theo tên/mô tả/brand/category (fuzzy search).
+  - `keyword` (String, optional) — tìm theo tên/mô tả/brand/category. Sử dụng multiple matching strategies cho độ chính xác cao.
   - `category` (String, slug, optional) — lọc theo danh mục.
   - `brand` (String, slug, optional) — lọc theo thương hiệu.
   - `minPrice`/`maxPrice` (Number, optional) — lọc khoảng giá.
@@ -14,7 +14,20 @@
   - `sortDir` (`asc`/`desc`; default `desc`).
   - `page` (int, default `0`).
   - `size` (int, default `12`, max `100`).
+- **Search Strategies** (theo thứ tự ưu tiên):
+  1. **Exact phrase match** trong tên sản phẩm (boost x20)
+  2. **Prefix match** trong tên sản phẩm (boost x15) 
+  3. **Multi-match** với fuzziness=1 (boost x5): Tên (x10) > Mô tả ngắn (x2) > Mô tả > Brand > Category
+  4. **Wildcard search** trong tên sản phẩm (boost x3)
 - **Success Response** (200 OK): `ProductSearchPageResponse`.
+
+### 2.0.0. Debug Search (Admin Only)
+- **URL**: `/api/search/products/debug`
+- **Method**: `GET`
+- **Description**: Debug endpoint để kiểm tra search functionality.
+- **Authentication**: ADMIN.
+- **Query Parameters**: `keyword` (default "test").
+- **Success Response** (200 OK): Debug information với search results.
 
 ### 2.0.1. Search Products By Image
 - **URL**: `/api/search/products/by-image`
@@ -110,6 +123,45 @@
 - **Success Response** (200 OK): `ProductResponse` with category & brand info.
   - `productImages` chứa các ảnh tham chiếu theo màu (`imageUrl`, `color`, `isMain`).
   - `productVariants` cung cấp mỗi tổ hợp màu + size (`sku`, `color`, `size`, `price`, `stock`).
+
+### 3.2.1. Get Product Recommendations
+- **URL**: `/api/products/{id}/recommendations`
+- **Method**: `GET`
+- **Description**: Gợi ý sản phẩm tương tự khi xem chi tiết sản phẩm. Dùng KNN vector similarity (Elasticsearch) + AI insight tùy chọn.
+- **Authentication**: Không yêu cầu.
+- **Path Parameters**: `id` (Long) - ID sản phẩm đang xem.
+- **Query Parameters**:
+  - `size` (int, default `6`, max `20`) — Số lượng sản phẩm gợi ý.
+  - `withAi` (Boolean, default `false`) — Kèm AI insight giải thích lý do gợi ý (tốn thêm ~1-2s latency).
+- **Success Response** (200 OK):
+  ```json
+  {
+    "message": "Product recommendations fetched successfully.",
+    "data": {
+      "sourceProductId": 101,
+      "sourceProductName": "Vợt Yonex Astrox 88D Pro",
+      "recommendations": [
+        {
+          "id": 102,
+          "name": "Vợt Yonex Astrox 99 Pro",
+          "slug": "vot-yonex-astrox-99-pro",
+          "basePrice": 4500000.0,
+          "brandName": "Yonex",
+          "categoryName": "Vợt cầu lông",
+          "thumbnailUrl": "https://...",
+          "isActive": true
+        }
+      ],
+      "aiInsight": "Những sản phẩm này được gợi ý vì cùng phân khúc vợt tấn công cao cấp của Yonex, phù hợp cho người chơi trung-nâng cấp muốn khám phá thêm lựa chọn trong cùng dòng sản phẩm.",
+      "aiInsightEnabled": true,
+      "total": 6
+    }
+  }
+  ```
+- **Notes**:
+  - Khi `withAi=false` (default): `aiInsight` sẽ là `null`, response nhanh hơn.
+  - Khi `withAi=true`: Gemini AI sẽ tạo 2-3 câu giải thích lý do gợi ý.
+  - Gợi ý dựa trên semantic vector similarity — sản phẩm cùng loại, cùng brand, cùng phân khúc giá sẽ được ưu tiên.
 
 ### 3.3. Create Product
 - **URL**: `/api/products`
@@ -361,17 +413,64 @@
   - Khong cho phep trung ten category o cung cap do.
 - **Success Response** (201 Created): `List<CategoryResponse>`.
 
-### 4.1. Reindex Products (Elasticsearch)
+### 4.1. Reindex Products (RabbitMQ - Recommended)
 - **URL**: `/api/search/products/reindex`
 - **Method**: `POST`
-- **Description**: Đồng bộ lại toàn bộ products từ database vào Elasticsearch index.
+- **Description**: Đồng bộ lại toàn bộ products từ database vào Elasticsearch index sử dụng RabbitMQ queue system. **Phương pháp được khuyến nghị** vì không bị timeout và có retry mechanism.
 - **Authentication**: ADMIN.
+- **Processing**: Asynchronous via RabbitMQ với batch processing (50 products/batch)
+- **Features**:
+  - ✅ Không bị timeout (xử lý hoàn toàn bất đồng bộ)
+  - ✅ Retry mechanism tự động (max 3 retries per batch)
+  - ✅ Progress tracking via Redis
+  - ✅ Scalable với multiple workers
+  - ✅ Batch processing để tránh memory issues
 - **Success Response** (200 OK):
   ```json
   {
-    "message": "Product index reindex completed"
+    "message": "Product reindex started successfully via RabbitMQ",
+    "data": {
+      "requestId": "uuid-string",
+      "status": "QUEUED",
+      "message": "Reindex process has been queued and will be processed in background"
+    }
   }
   ```
+
+### 4.1.1. Get Reindex Status
+- **URL**: `/api/search/products/reindex/status/{requestId}`
+- **Method**: `GET`
+- **Description**: Kiểm tra trạng thái của reindex request.
+- **Authentication**: ADMIN.
+- **Path Parameters**: `requestId` (String) - Request ID từ reindex response
+- **Success Response** (200 OK):
+  ```json
+  {
+    "message": "Reindex status retrieved successfully",
+    "data": {
+      "requestId": "uuid-string",
+      "requestedBy": "admin@example.com",
+      "requestedAt": "2026-04-24T10:30:00",
+      "totalProducts": 1500,
+      "batchSize": 50,
+      "status": "COMPLETED"
+    }
+  }
+  ```
+- **Status Values**:
+  - `STARTED`: Request đã được tạo
+  - `IN_PROGRESS`: Đang xử lý batches
+  - `COMPLETED`: Hoàn thành thành công
+  - `FAILED`: Thất bại
+  - `NOT_FOUND`: Request ID không tồn tại
+
+### 4.1.2. Reindex Products (Legacy - Synchronous)
+- **URL**: `/api/search/products/reindex/legacy`
+- **Method**: `POST`
+- **Description**: Đồng bộ lại products theo cách cũ (synchronous). **Không khuyến nghị** vì có thể bị timeout.
+- **Authentication**: ADMIN.
+- **Timeout**: 2 minutes (continues in background if timeout)
+- **Success Response**: Giống như phiên bản cũ
 
 ## Search Sync (Observer Pattern)
 - Khi tạo/cập nhật/toggle status/upload thumbnail product: phát event `UPSERT`.

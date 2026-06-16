@@ -25,6 +25,15 @@ class ChatbotProductSuggestionModel {
       shortDescription: '${json['shortDescription'] ?? ''}',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'slug': slug,
+        'basePrice': basePrice,
+        'brandName': brandName,
+        'shortDescription': shortDescription,
+      };
 }
 
 class ChatbotAskResponseModel {

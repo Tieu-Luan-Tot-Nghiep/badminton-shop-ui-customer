@@ -23,6 +23,7 @@ class ProfilePage extends StatelessWidget {
     this.chatCountListenable,
     this.onOpenCart,
     this.onOpenChat,
+    this.onOpenShopChat,
     required this.onLoggedOut,
     this.onNavigateToHome,
   });
@@ -34,6 +35,7 @@ class ProfilePage extends StatelessWidget {
   final ValueListenable<int>? chatCountListenable;
   final VoidCallback? onOpenCart;
   final VoidCallback? onOpenChat;
+  final VoidCallback? onOpenShopChat;
   final VoidCallback onLoggedOut;
   final VoidCallback? onNavigateToHome;
 
@@ -167,11 +169,21 @@ class ProfilePage extends StatelessWidget {
           ValueListenableBuilder<int>(
             valueListenable: chatCountListenable!,
             builder: (_, count, __) {
-              return ChatIconBubble(count: count, onTap: onOpenChat);
+              return ChatIconBubble(
+                count: count,
+                onTap: onOpenShopChat,
+                icon: Icons.chat_rounded,
+              );
             },
           )
         else
-          ChatIconBubble(count: 0, onTap: onOpenChat),
+          ChatIconBubble(
+            count: 0,
+            onTap: onOpenShopChat,
+            icon: Icons.chat_rounded,
+          ),
+        const SizedBox(width: 6),
+        ChatIconBubble(count: 0, onTap: onOpenChat),
         const SizedBox(width: 10),
         ValueListenableBuilder<int>(
           valueListenable: cartCountListenable,

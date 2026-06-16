@@ -174,7 +174,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         color: AppColors.surfaceContainerHighest.withValues(alpha: 0.4),
         child: Text(
-          'Chưa có phiên chatbot active',
+          'Hãy nhập câu hỏi để bắt đầu trò chuyện',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
           ),

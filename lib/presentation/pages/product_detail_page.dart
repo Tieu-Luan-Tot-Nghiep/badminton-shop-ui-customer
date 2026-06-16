@@ -8,8 +8,8 @@ import '../manager/address_controller.dart';
 import '../manager/auth_controller.dart';
 import '../manager/order_controller.dart';
 import '../widgets/cart_icon_bubble.dart';
+import '../widgets/chat_icon_bubble.dart';
 import 'checkout_page.dart';
-
 class ProductDetailPage extends StatefulWidget {
   const ProductDetailPage({
     super.key,
@@ -19,7 +19,10 @@ class ProductDetailPage extends StatefulWidget {
     this.addressController,
     this.orderController,
     this.cartCountListenable,
+    this.chatCountListenable,
     this.onOpenCart,
+    this.onOpenChat,
+    this.onOpenShopChat,
     this.onRequireLogin,
     this.onCartChanged,
     this.remote,
@@ -32,7 +35,10 @@ class ProductDetailPage extends StatefulWidget {
   final AddressController? addressController;
   final OrderController? orderController;
   final ValueListenable<int>? cartCountListenable;
+  final ValueListenable<int>? chatCountListenable;
   final VoidCallback? onOpenCart;
+  final VoidCallback? onOpenChat;
+  final VoidCallback? onOpenShopChat;
   final VoidCallback? onRequireLogin;
   final VoidCallback? onCartChanged;
   final ShopRemoteDataSource? remote;
@@ -356,6 +362,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               child: _buildReviewCard(context, review),
                             ),
                           ),
+                        // ── Sản phẩm gợi ý ──────────────────────────────
+                        if (data.recommendations != null &&
+                            data.recommendations!.recommendations.isNotEmpty) ...[
+                          const SizedBox(height: 28),
+                          _buildRecommendationsSection(
+                              context, data.recommendations!),
+                        ],
                       ],
                     ),
                   ),
@@ -388,10 +401,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       reviews = const [];
     }
 
+    ShopProductRecommendationsModel? recommendations;
+    try {
+      recommendations = await _remote.getProductRecommendations(
+        productId: widget.productId,
+        size: 6,
+      );
+    } catch (_) {
+      recommendations = null;
+    }
+
     return _ProductDetailViewData(
       detail: detail,
       reviews: reviews,
       summary: summary,
+      recommendations: recommendations,
     );
   }
 
@@ -430,6 +454,195 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     );
   }
 
+  Widget _buildRecommendationsSection(
+    BuildContext context,
+    ShopProductRecommendationsModel data,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Row(
+          children: [
+            Container(
+              width: 4,
+              height: 22,
+              decoration: BoxDecoration(
+                color: AppColors.secondary,
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'CÓ THỂ BẠN CŨNG THÍCH',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
+            ),
+          ],
+        ),
+        // AI insight nếu có
+        if (data.aiInsightEnabled &&
+            data.aiInsight != null &&
+            data.aiInsight!.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.primaryContainer.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: AppColors.primaryContainer,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    data.aiInsight!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 14),
+        // Danh sách sản phẩm gợi ý
+        SizedBox(
+          height: 220,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: data.recommendations.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final item = data.recommendations[index];
+              return _buildRecommendationCard(context, item);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationCard(
+    BuildContext context,
+    ShopProductRecommendationItemModel item,
+  ) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ProductDetailPage(
+              productId: '${item.id}',
+              authController: widget.authController,
+              addressController: widget.addressController,
+              orderController: widget.orderController,
+              cartCountListenable: widget.cartCountListenable,
+              chatCountListenable: widget.chatCountListenable,
+              onOpenCart: widget.onOpenCart,
+              onOpenChat: widget.onOpenChat,
+              onOpenShopChat: widget.onOpenShopChat,
+              onRequireLogin: widget.onRequireLogin,
+              onCartChanged: widget.onCartChanged,
+              onNavigateToHome: widget.onNavigateToHome,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 150,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ảnh sản phẩm
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+              child: AspectRatio(
+                aspectRatio: 1.1,
+                child: item.thumbnailUrl != null &&
+                        item.thumbnailUrl!.isNotEmpty
+                    ? Image.network(
+                        item.thumbnailUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: AppColors.surfaceContainerHighest,
+                          child: const Icon(Icons.broken_image_outlined,
+                              color: AppColors.textSecondary),
+                        ),
+                      )
+                    : Container(
+                        color: AppColors.surfaceContainerHighest,
+                        child: const Icon(Icons.image_not_supported_outlined,
+                            color: AppColors.textSecondary),
+                      ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Brand tag
+                    if (item.brandName.isNotEmpty)
+                      Text(
+                        item.brandName.toUpperCase(),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.secondary,
+                              fontSize: 9,
+                              letterSpacing: 1,
+                            ),
+                      ),
+                    const SizedBox(height: 2),
+                    // Tên sản phẩm
+                    Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                            height: 1.2,
+                          ),
+                    ),
+                    const Spacer(),
+                    // Giá
+                    Text(
+                      _formatPrice(item.basePrice),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.primaryContainer,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 13,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTopBar(BuildContext context) {
     return Row(
       children: [
@@ -440,29 +653,52 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        GestureDetector(
-          onTap: widget.onNavigateToHome,
-          child: Text(
-            'SHUTTLE_X',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: AppColors.primaryContainer,
-              fontStyle: FontStyle.italic,
+        Flexible(
+          child: GestureDetector(
+            onTap: widget.onNavigateToHome,
+            child: Text(
+              'SHUTTLE_X',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: AppColors.primaryContainer,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
         ),
-        const Spacer(),
-        const Icon(Icons.share_outlined, color: AppColors.textSecondary),
-        const SizedBox(width: 14),
-        if (widget.cartCountListenable != null)
-          ValueListenableBuilder<int>(
-            valueListenable: widget.cartCountListenable!,
-            builder: (_, count, __) {
-              return CartIconBubble(count: count, onTap: widget.onOpenCart);
-            },
-          )
-        else
-          const CartIconBubble(count: 0),
-        const SizedBox(width: 10),
+      const SizedBox(width: 6),
+      // Chat với chủ shop (real-time) — badge hiển thị tin nhắn chưa đọc
+      if (widget.chatCountListenable != null)
+        ValueListenableBuilder<int>(
+          valueListenable: widget.chatCountListenable!,
+          builder: (_, count, __) {
+            return ChatIconBubble(
+              count: count,
+              onTap: widget.onOpenShopChat,
+              icon: Icons.chat_rounded,
+            );
+          },
+        )
+      else
+        ChatIconBubble(
+          count: 0,
+          onTap: widget.onOpenShopChat,
+          icon: Icons.chat_rounded,
+        ),
+      const SizedBox(width: 6),
+      // Chatbot AI — không có badge
+      ChatIconBubble(count: 0, onTap: widget.onOpenChat),
+      const SizedBox(width: 6),
+      if (widget.cartCountListenable != null)
+        ValueListenableBuilder<int>(
+          valueListenable: widget.cartCountListenable!,
+          builder: (_, count, __) {
+            return CartIconBubble(count: count, onTap: widget.onOpenCart);
+          },
+        )
+      else
+        const CartIconBubble(count: 0),
+      const SizedBox(width: 10),
         CircleAvatar(
           radius: 18,
           backgroundColor: AppColors.surfaceContainerHighest,
@@ -779,11 +1015,13 @@ class _ProductDetailViewData {
     required this.detail,
     required this.reviews,
     required this.summary,
+    this.recommendations,
   });
 
   final ShopProductDetailModel detail;
   final List<ShopProductReviewModel> reviews;
   final ShopProductReviewSummaryModel? summary;
+  final ShopProductRecommendationsModel? recommendations;
 
   double get averageRating {
     final value = summary?.averageRating ?? detail.rating;

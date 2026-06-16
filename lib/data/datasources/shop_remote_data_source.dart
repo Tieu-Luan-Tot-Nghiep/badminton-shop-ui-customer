@@ -262,6 +262,53 @@ class ShopRemoteDataSource {
     return ShopProductReviewSummaryModel.fromJson(map);
   }
 
+  Future<ShopProductRecommendationsModel> getProductRecommendations({
+    required String productId,
+    int size = 6,
+    bool withAi = false,
+  }) async {
+    // Try the dedicated KNN recommendations endpoint first.
+    try {
+      final response = await _dio.get(
+        '/api/products/$productId/recommendations',
+        queryParameters: {'size': size, 'withAi': withAi},
+      );
+      final map = _pickEnvelope(response.data);
+      final result = ShopProductRecommendationsModel.fromJson(map);
+      if (result.recommendations.isNotEmpty) return result;
+    } catch (_) {}
+
+    // Fallback: similar products search (Elasticsearch, same-category matching).
+    final fallback = await _dio.get(
+      '/api/search/products/similar',
+      queryParameters: {
+        'productId': productId,
+        'size': size,
+        'activeOnly': true,
+      },
+    );
+    final page = _parsePagedProducts(fallback.data, page: 0, size: size);
+    final items = page.items
+        .map(
+          (p) => ShopProductRecommendationItemModel(
+            id: int.tryParse(p.id) ?? 0,
+            name: p.name,
+            slug: p.id,
+            basePrice: p.price,
+            brandName: '',
+            categoryName: '',
+            thumbnailUrl: p.imageUrl,
+          ),
+        )
+        .toList();
+
+    return ShopProductRecommendationsModel(
+      recommendations: items,
+      aiInsight: null,
+      aiInsightEnabled: false,
+    );
+  }
+
   List<Map<String, dynamic>> _parseList(dynamic payload) {
     if (payload is List) {
       return payload.whereType<Map<String, dynamic>>().toList();
@@ -573,6 +620,67 @@ class ShopProductReviewSummaryModel {
       totalReviews: _toIntSafe(
         json['totalReviews'] ?? json['total'] ?? json['count'] ?? 0,
       ),
+    );
+  }
+}
+
+class ShopProductRecommendationItemModel {
+  const ShopProductRecommendationItemModel({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.basePrice,
+    required this.brandName,
+    required this.categoryName,
+    this.thumbnailUrl,
+  });
+
+  final int id;
+  final String name;
+  final String slug;
+  final double basePrice;
+  final String brandName;
+  final String categoryName;
+  final String? thumbnailUrl;
+
+  factory ShopProductRecommendationItemModel.fromJson(
+      Map<String, dynamic> json) {
+    return ShopProductRecommendationItemModel(
+      id: _toIntSafe(json['id'] ?? json['productId']),
+      name: '${json['name'] ?? json['productName'] ?? ''}',
+      slug: '${json['slug'] ?? ''}',
+      basePrice: _toDoubleSafe(json['basePrice'] ?? json['price'] ?? 0),
+      brandName: '${json['brandName'] ?? ''}',
+      categoryName: '${json['categoryName'] ?? ''}',
+      thumbnailUrl: json['thumbnailUrl']?.toString(),
+    );
+  }
+}
+
+class ShopProductRecommendationsModel {
+  const ShopProductRecommendationsModel({
+    required this.recommendations,
+    this.aiInsight,
+    this.aiInsightEnabled = false,
+  });
+
+  final List<ShopProductRecommendationItemModel> recommendations;
+  final String? aiInsight;
+  final bool aiInsightEnabled;
+
+  factory ShopProductRecommendationsModel.fromJson(Map<String, dynamic> json) {
+    final rawList = json['recommendations'];
+    final items = rawList is List
+        ? rawList
+            .whereType<Map<String, dynamic>>()
+            .map(ShopProductRecommendationItemModel.fromJson)
+            .toList()
+        : <ShopProductRecommendationItemModel>[];
+
+    return ShopProductRecommendationsModel(
+      recommendations: items,
+      aiInsight: json['aiInsight']?.toString(),
+      aiInsightEnabled: json['aiInsightEnabled'] == true,
     );
   }
 }

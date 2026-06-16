@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class ChatIconBubble extends StatelessWidget {
-  const ChatIconBubble({super.key, required this.count, this.onTap});
+  const ChatIconBubble({
+    super.key,
+    required this.count,
+    this.onTap,
+    this.icon = Icons.smart_toy_rounded,
+  });
 
   final int count;
   final VoidCallback? onTap;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +31,8 @@ class ChatIconBubble extends StatelessWidget {
                 color: AppColors.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.smart_toy_rounded,
+              child: Icon(
+                icon,
                 size: 18,
                 color: AppColors.textPrimary,
               ),

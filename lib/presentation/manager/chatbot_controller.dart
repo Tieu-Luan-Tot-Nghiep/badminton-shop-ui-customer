@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../data/datasources/chatbot_remote_data_source.dart';
 import '../../data/models/chatbot_model.dart';
 import 'auth_controller.dart';
@@ -20,17 +21,46 @@ class ChatbotMessage {
   final List<ChatbotProductSuggestionModel> suggestions;
   final bool recoveredFromMemory;
   final String? memorySnippet;
+
+  Map<String, dynamic> toJson() => {
+        'isUser': isUser,
+        'text': text,
+        'createdAt': createdAt.toIso8601String(),
+        'suggestions': suggestions.map((e) => e.toJson()).toList(),
+        'recoveredFromMemory': recoveredFromMemory,
+        'memorySnippet': memorySnippet,
+      };
+
+  factory ChatbotMessage.fromJson(Map<String, dynamic> json) {
+    return ChatbotMessage(
+      isUser: json['isUser'] == true,
+      text: json['text'] ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      suggestions: (json['suggestions'] as List?)
+              ?.map((e) => ChatbotProductSuggestionModel.fromJson(
+                  Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
+      recoveredFromMemory: json['recoveredFromMemory'] == true,
+      memorySnippet: json['memorySnippet'],
+    );
+  }
 }
 
 class ChatbotController extends ChangeNotifier {
-  ChatbotController(this._authController, {ChatbotRemoteDataSource? remote})
-      : _remote = remote ?? ChatbotRemoteDataSource() {
+  ChatbotController(this._authController,
+      {ChatbotRemoteDataSource? remote, FlutterSecureStorage? storage})
+      : _remote = remote ?? ChatbotRemoteDataSource(),
+        _storage = storage ?? const FlutterSecureStorage() {
     _authController.addListener(_onAuthChanged);
     _onAuthChanged();
   }
 
   final AuthController _authController;
   final ChatbotRemoteDataSource _remote;
+  final FlutterSecureStorage _storage;
 
   final List<ChatbotMessage> _messages = [];
 
@@ -51,7 +81,7 @@ class ChatbotController extends ChangeNotifier {
     super.dispose();
   }
 
-  void _onAuthChanged() {
+  void _onAuthChanged() async {
     final token = _authController.session?.token;
     if (token == null || token.isEmpty) {
       _messages.clear();
@@ -62,8 +92,33 @@ class ChatbotController extends ChangeNotifier {
     }
 
     if (_sessionState == null && !_isLoading) {
+      await _loadLocalMessages();
       loadSessionState();
     }
+  }
+
+  Future<void> _loadLocalMessages() async {
+    try {
+      final username = _authController.session?.username;
+      if (username == null) return;
+      final data = await _storage.read(key: 'chatbot_msgs_$username');
+      if (data != null) {
+        final List decoded = jsonDecode(data);
+        _messages.clear();
+        _messages.addAll(decoded.map(
+            (e) => ChatbotMessage.fromJson(Map<String, dynamic>.from(e))));
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveLocalMessages() async {
+    try {
+      final username = _authController.session?.username;
+      if (username == null) return;
+      final encoded = jsonEncode(_messages.map((e) => e.toJson()).toList());
+      await _storage.write(key: 'chatbot_msgs_$username', value: encoded);
+    } catch (_) {}
   }
 
   Future<void> loadSessionState() async {
@@ -95,6 +150,7 @@ class ChatbotController extends ChangeNotifier {
         createdAt: DateTime.now(),
       ),
     );
+    _saveLocalMessages();
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -118,9 +174,11 @@ class ChatbotController extends ChangeNotifier {
         updatedAt: response.sessionUpdatedAt,
         recommendedProducts: _sessionState?.recommendedProducts ?? const [],
       );
+      _saveLocalMessages();
     } catch (e) {
       _errorMessage = 'Không thể gửi câu hỏi cho chatbot';
       _messages.removeWhere((message) => message.isUser && message.text == question.trim());
+      _saveLocalMessages();
     } finally {
       _isLoading = false;
       notifyListeners();

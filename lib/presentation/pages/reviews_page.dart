@@ -17,6 +17,7 @@ class ReviewsPage extends StatefulWidget {
     this.chatCountListenable,
     this.onOpenCart,
     this.onOpenChat,
+    this.onOpenShopChat,
     this.onNavigateToHome,
   });
 
@@ -25,6 +26,7 @@ class ReviewsPage extends StatefulWidget {
   final ValueNotifier<int>? chatCountListenable;
   final VoidCallback? onOpenCart;
   final VoidCallback? onOpenChat;
+  final VoidCallback? onOpenShopChat;
   final VoidCallback? onNavigateToHome;
 
   @override
@@ -101,11 +103,21 @@ class _ReviewsPageState extends State<ReviewsPage> {
           ValueListenableBuilder<int>(
             valueListenable: widget.chatCountListenable!,
             builder: (_, count, __) {
-              return ChatIconBubble(count: count, onTap: widget.onOpenChat);
+              return ChatIconBubble(
+                count: count,
+                onTap: widget.onOpenShopChat,
+                icon: Icons.chat_rounded,
+              );
             },
           )
         else
-          ChatIconBubble(count: 0, onTap: widget.onOpenChat),
+          ChatIconBubble(
+            count: 0,
+            onTap: widget.onOpenShopChat,
+            icon: Icons.chat_rounded,
+          ),
+        const SizedBox(width: 6),
+        ChatIconBubble(count: 0, onTap: widget.onOpenChat),
         const SizedBox(width: 10),
         if (widget.cartCountListenable != null)
           ValueListenableBuilder<int>(

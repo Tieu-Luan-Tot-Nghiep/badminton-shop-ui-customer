@@ -25,6 +25,7 @@ class HomePage extends StatefulWidget {
     this.chatCountListenable,
     this.onOpenCart,
     this.onOpenChat,
+    this.onOpenShopChat,
     this.onCategorySelected,
     this.onProductSelected,
     this.onSearchSubmitted,
@@ -38,6 +39,7 @@ class HomePage extends StatefulWidget {
   final ValueListenable<int>? chatCountListenable;
   final VoidCallback? onOpenCart;
   final VoidCallback? onOpenChat;
+  final VoidCallback? onOpenShopChat;
   final ValueChanged<CategoryEntity>? onCategorySelected;
   final ValueChanged<ProductEntity>? onProductSelected;
   final ValueChanged<String>? onSearchSubmitted;
@@ -188,11 +190,21 @@ class _HomePageState extends State<HomePage> {
           ValueListenableBuilder<int>(
             valueListenable: widget.chatCountListenable!,
             builder: (_, count, __) {
-              return ChatIconBubble(count: count, onTap: widget.onOpenChat);
+              return ChatIconBubble(
+                count: count,
+                onTap: widget.onOpenShopChat,
+                icon: Icons.chat_rounded,
+              );
             },
           )
         else
-          ChatIconBubble(count: 0, onTap: widget.onOpenChat),
+          ChatIconBubble(
+            count: 0,
+            onTap: widget.onOpenShopChat,
+            icon: Icons.chat_rounded,
+          ),
+        const SizedBox(width: 6),
+        ChatIconBubble(count: 0, onTap: widget.onOpenChat),
         const SizedBox(width: 10),
         if (widget.cartCountListenable != null)
           ValueListenableBuilder<int>(

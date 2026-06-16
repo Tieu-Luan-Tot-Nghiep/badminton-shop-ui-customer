@@ -29,6 +29,7 @@ class ShopPage extends StatefulWidget {
     this.orderController,
     this.onOpenCart,
     this.onOpenChat,
+    this.onOpenShopChat,
     this.onNavigateToHome,
     this.onCartChanged,
     this.onRequireLogin,
@@ -44,6 +45,7 @@ class ShopPage extends StatefulWidget {
   final OrderController? orderController;
   final VoidCallback? onOpenCart;
   final VoidCallback? onOpenChat;
+  final VoidCallback? onOpenShopChat;
   final VoidCallback? onNavigateToHome;
   final VoidCallback? onCartChanged;
   final VoidCallback? onRequireLogin;
@@ -64,18 +66,24 @@ class _ShopPageState extends State<ShopPage> {
     super.initState();
     _controller = ShopController(ShopRemoteDataSource(), ShopLocalDataSource());
 
-    final initialSlug = widget.categorySlugListenable?.value;
-    if (initialSlug != null && initialSlug.isNotEmpty) {
-      _controller.selectedCategorySlug = initialSlug;
-    }
+    final initialScanResult = widget.scanSearchResultListenable?.value;
+    if (initialScanResult != null) {
+      _lastAppliedScanPayload = initialScanResult;
+      _controller.applyScanResults(initialScanResult.products);
+    } else {
+      final initialSlug = widget.categorySlugListenable?.value;
+      if (initialSlug != null && initialSlug.isNotEmpty) {
+        _controller.selectedCategorySlug = initialSlug;
+      }
 
-    final initialKeyword = widget.searchKeywordListenable?.value;
-    if (initialKeyword != null && initialKeyword.isNotEmpty) {
-      _controller.keyword = initialKeyword;
-      _searchController.text = initialKeyword;
-    }
+      final initialKeyword = widget.searchKeywordListenable?.value;
+      if (initialKeyword != null && initialKeyword.isNotEmpty) {
+        _controller.keyword = initialKeyword;
+        _searchController.text = initialKeyword;
+      }
 
-    _controller.loadInitial();
+      _controller.loadInitial();
+    }
     
     _scrollController.addListener(_onScroll);
     widget.scanSearchResultListenable?.addListener(_onScanResultChanged);
@@ -238,11 +246,21 @@ class _ShopPageState extends State<ShopPage> {
           ValueListenableBuilder<int>(
             valueListenable: widget.chatCountListenable!,
             builder: (_, count, __) {
-              return ChatIconBubble(count: count, onTap: widget.onOpenChat);
+              return ChatIconBubble(
+                count: count,
+                onTap: widget.onOpenShopChat,
+                icon: Icons.chat_rounded,
+              );
             },
           )
         else
-          ChatIconBubble(count: 0, onTap: widget.onOpenChat),
+          ChatIconBubble(
+            count: 0,
+            onTap: widget.onOpenShopChat,
+            icon: Icons.chat_rounded,
+          ),
+        const SizedBox(width: 6),
+        ChatIconBubble(count: 0, onTap: widget.onOpenChat),
         const SizedBox(width: 10),
         ValueListenableBuilder<int>(
           valueListenable: widget.cartCountListenable,
@@ -590,7 +608,7 @@ class _ShopPageState extends State<ShopPage> {
           '${_controller.products.length}',
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
             color: AppColors.secondary,
-            fontSize: 46,
+            fontSize: 34,
             fontWeight: FontWeight.w900,
           ),
         ),
@@ -598,9 +616,9 @@ class _ShopPageState extends State<ShopPage> {
         Expanded(
           child: Text(
             'KẾT QUẢ ĐƯỢC TÌM THẤY',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -659,7 +677,10 @@ class _ShopPageState extends State<ShopPage> {
                   addressController: widget.addressController,
                   orderController: widget.orderController,
                   cartCountListenable: widget.cartCountListenable,
+                  chatCountListenable: widget.chatCountListenable,
                   onOpenCart: widget.onOpenCart,
+                  onOpenChat: widget.onOpenChat,
+                  onOpenShopChat: widget.onOpenShopChat,
                   onRequireLogin: widget.onRequireLogin,
                   onCartChanged: widget.onCartChanged,
                   onNavigateToHome: widget.onNavigateToHome,

@@ -216,6 +216,17 @@ class AuthRemoteDataSource {
     );
   }
 
+  Future<void> updateFcmToken({
+    required String token,
+    required String fcmToken,
+  }) async {
+    await _dio.put(
+      '/api/auth/fcm-token',
+      data: {'fcmToken': fcmToken},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
+
   Future<void> updateAvatar({
     required String token,
     required String imagePath,
